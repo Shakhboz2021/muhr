@@ -372,7 +372,7 @@ internal final class MuhrManager: @unchecked Sendable {
         switch providerType {
         case .styx:
             newProvider = StyxProvider()
-        case .metin, .eimzo:
+        case .metin, .eImzo:
             throw MuhrError.providerNotSupported(
                 providerName: providerType.displayName
             )

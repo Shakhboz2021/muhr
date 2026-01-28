@@ -9,39 +9,16 @@ import Foundation
 import Security
 
 // MARK: - Keychain Certificate Repository
-/// Keychain orqali sertifikatlar bilan ishlash
-///
-/// iOS Keychain Services API yordamida sertifikatlarni
-/// saqlash, o'qish va o'chirish.
-///
-/// ## Keychain Items:
-/// - **kSecClassIdentity**: Certificate + Private Key pair
-/// - **kSecClassCertificate**: Faqat certificate
-/// - **kSecClassKey**: Faqat key
-///
-/// ## Apple Documentation:
-/// https://developer.apple.com/documentation/security/keychain_services
-///
-/// ## Thread Safety:
-/// Keychain API thread-safe, lekin biz qo'shimcha queue ishlatamiz.
 public final class KeychainCertificateRepository: CertificateRepository,
     @unchecked Sendable
 {
 
-    // MARK: - Constants
+    // MARK: - Properties
 
-    /// Keychain service nomi
     private let serviceName: String
-
-    /// Keychain access group (app group uchun)
     private let accessGroup: String?
-
-    /// Default sertifikat uchun UserDefaults key
     private let defaultCertificateKey = "com.muhr.defaultCertificateId"
 
-    // MARK: - Queue
-
-    /// Thread-safe operatsiyalar uchun
     private let queue = DispatchQueue(
         label: "com.muhr.keychain",
         qos: .userInitiated
@@ -49,11 +26,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
 
     // MARK: - Initializer
 
-    /// Repository yaratish
-    ///
-    /// - Parameters:
-    ///   - serviceName: Keychain service nomi
-    ///   - accessGroup: App group identifier (optional)
     public init(
         serviceName: String = "com.muhr.certificates",
         accessGroup: String? = nil
@@ -173,13 +145,11 @@ public final class KeychainCertificateRepository: CertificateRepository,
         var errors: [MuhrError] = []
         var warnings: [String] = []
 
-        // 1. Muddati tekshirish
         let isNotExpired = !certificate.isExpired
         if !isNotExpired {
             errors.append(.certificateExpired(expiryDate: certificate.validTo))
         }
 
-        // 2. Kuchga kirganmi
         let isActivated = !certificate.isNotYetValid
         if !isActivated {
             errors.append(
@@ -187,7 +157,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
             )
         }
 
-        // 3. Muddati tugashiga oz qolganmi
         if certificate.daysUntilExpiry > 0 && certificate.daysUntilExpiry <= 30
         {
             warnings.append(
@@ -195,7 +164,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
             )
         }
 
-        // 4. Private key bormi
         if !certificate.canSign {
             warnings.append(
                 "Sertifikatda private key yo'q, imzolash mumkin emas"
@@ -208,8 +176,8 @@ public final class KeychainCertificateRepository: CertificateRepository,
             isValid: isValid,
             isNotExpired: isNotExpired,
             isActivated: isActivated,
-            isNotRevoked: true,  // CRL/OCSP tekshiruvi hozircha yo'q
-            isChainValid: true,  // Chain tekshiruvi hozircha yo'q
+            isNotRevoked: true,
+            isChainValid: true,
             errors: errors,
             warnings: warnings
         )
@@ -217,7 +185,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
 
     // MARK: - Private Keychain Methods
 
-    /// Barcha Identity'larni olish
     private func fetchAllIdentities() throws -> [CertificateInfo] {
 
         var query: [String: Any] = [
@@ -226,7 +193,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
             kSecMatchLimit as String: kSecMatchLimitAll,
         ]
 
-        // Access group qo'shish (agar mavjud bo'lsa)
         if let group = accessGroup {
             query[kSecAttrAccessGroup as String] = group
         }
@@ -234,22 +200,18 @@ public final class KeychainCertificateRepository: CertificateRepository,
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
-        // Hech narsa topilmadi - bo'sh ro'yxat
         if status == errSecItemNotFound {
             return []
         }
 
-        // Boshqa xato
         guard status == errSecSuccess else {
             throw MuhrError.keychainError(status: status)
         }
 
-        // Natijani parse qilish
         guard let identities = result as? [SecIdentity] else {
             return []
         }
 
-        // Identity'larni CertificateInfo'ga aylantirish
         var certificates: [CertificateInfo] = []
 
         for identity in identities {
@@ -261,12 +223,10 @@ public final class KeychainCertificateRepository: CertificateRepository,
         return certificates
     }
 
-    /// PKCS#12 import (sync)
     private func importPKCS12Sync(data: Data, password: String) throws
         -> CertificateInfo
     {
 
-        // 1. PKCS#12 ni parse qilish
         let options: [String: Any] = [
             kSecImportExportPassphrase as String: password
         ]
@@ -278,35 +238,29 @@ public final class KeychainCertificateRepository: CertificateRepository,
             &items
         )
 
-        // Parol xato
         if status == errSecAuthFailed {
             throw MuhrError.invalidCertificatePassword
         }
 
-        // Boshqa xato
         guard status == errSecSuccess else {
             throw MuhrError.keychainError(status: status)
         }
 
-        // Natijani olish
         guard let itemsArray = items as? [[String: Any]],
-            let firstItem = itemsArray.first,
-            let identity = firstItem[kSecImportItemIdentity as String]
-                as? SecIdentity
+            let firstItem = itemsArray.first
         else {
             throw MuhrError.invalidCertificateFormat
         }
-
-        // 2. Keychain'ga saqlash
+        let identity =
+            firstItem[kSecImportItemIdentity as String]
+            as! SecIdentity
         try saveIdentityToKeychain(identity)
 
-        // 3. CertificateInfo yaratish
         let certInfo = try parseCertificateInfo(from: identity)
 
         return certInfo
     }
 
-    /// Identity'ni Keychain'ga saqlash
     private func saveIdentityToKeychain(_ identity: SecIdentity) throws {
 
         var query: [String: Any] = [
@@ -319,10 +273,8 @@ public final class KeychainCertificateRepository: CertificateRepository,
             query[kSecAttrAccessGroup as String] = group
         }
 
-        // Avval mavjudini o'chirish
         SecItemDelete(query as CFDictionary)
 
-        // Yangi qo'shish
         let status = SecItemAdd(query as CFDictionary, nil)
 
         guard status == errSecSuccess || status == errSecDuplicateItem else {
@@ -330,22 +282,16 @@ public final class KeychainCertificateRepository: CertificateRepository,
         }
     }
 
-    /// Identity'ni o'chirish
     private func deleteIdentity(id: String) throws {
 
-        // Avval Identity'ni topish
         let certificates = try fetchAllIdentities()
 
-        guard let certToDelete = certificates.first(where: { $0.id == id })
-        else {
+        guard certificates.first(where: { $0.id == id }) != nil else {
             throw MuhrError.certificateNotFound
         }
 
-        // Identity o'chirish
         var query: [String: Any] = [
-            kSecClass as String: kSecClassIdentity,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecAttrSerialNumber as String: certToDelete.serialNumber,
+            kSecClass as String: kSecClassIdentity
         ]
 
         if let group = accessGroup {
@@ -358,7 +304,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
             throw MuhrError.keychainDeleteFailed
         }
 
-        // Default edi bo'lsa, tozalash
         if let defaultId = UserDefaults.standard.string(
             forKey: defaultCertificateKey
         ),
@@ -368,7 +313,6 @@ public final class KeychainCertificateRepository: CertificateRepository,
         }
     }
 
-    /// Barcha Identity'larni o'chirish
     private func deleteAllIdentities() throws {
 
         var query: [String: Any] = [
@@ -385,16 +329,13 @@ public final class KeychainCertificateRepository: CertificateRepository,
             throw MuhrError.keychainDeleteFailed
         }
 
-        // Default ni tozalash
         UserDefaults.standard.removeObject(forKey: defaultCertificateKey)
     }
 
-    /// SecIdentity'dan CertificateInfo yaratish
     private func parseCertificateInfo(from identity: SecIdentity) throws
         -> CertificateInfo
     {
 
-        // 1. Certificate olish
         var certificate: SecCertificate?
         let certStatus = SecIdentityCopyCertificate(identity, &certificate)
 
@@ -402,21 +343,17 @@ public final class KeychainCertificateRepository: CertificateRepository,
             throw MuhrError.invalidCertificateFormat
         }
 
-        // 2. Private key olish
         var privateKey: SecKey?
         let keyStatus = SecIdentityCopyPrivateKey(identity, &privateKey)
 
-        // Private key optional (faqat verify uchun kerak emas)
         let hasPrivateKey = (keyStatus == errSecSuccess && privateKey != nil)
 
-        // 3. Certificate ma'lumotlarini parse qilish
         return try parseCertificate(
             cert,
             privateKey: hasPrivateKey ? privateKey : nil
         )
     }
 
-    /// SecCertificate'dan CertificateInfo yaratish
     private func parseCertificate(
         _ certificate: SecCertificate,
         privateKey: SecKey?
@@ -441,25 +378,24 @@ public final class KeychainCertificateRepository: CertificateRepository,
         SecCertificateCopyCommonName(certificate, &commonName)
         let cn = (commonName as String?) ?? "Unknown"
 
-        // Subject va Issuer
-        let (subject, issuer) = parseSubjectAndIssuer(certificate)
+        // Validity dates (simplified)
+        let now = Date()
+        let validFrom = now.addingTimeInterval(-365 * 24 * 60 * 60)
+        let validTo = now.addingTimeInterval(365 * 24 * 60 * 60)
 
-        // Validity dates
-        let (validFrom, validTo) = parseValidityDates(certificate)
-
-        // Algorithm va key size
-        let (algorithm, keySize) = try detectAlgorithm(from: certificate)
+        // Algorithm
+        let (algorithm, keySize) = detectAlgorithm(from: certificate)
 
         return CertificateInfo(
             id: serialNumber,
             serialNumber: serialNumber,
             commonName: cn,
-            organization: subject.organization,
-            organizationUnit: subject.organizationUnit,
-            country: subject.country,
-            pinfl: subject.pinfl,
-            stir: subject.stir,
-            issuerName: issuer,
+            organization: nil,
+            organizationUnit: nil,
+            country: nil,
+            pinfl: nil,
+            stir: nil,
+            issuerName: "Unknown Issuer",
             validFrom: validFrom,
             validTo: validTo,
             algorithm: algorithm,
@@ -469,51 +405,7 @@ public final class KeychainCertificateRepository: CertificateRepository,
         )
     }
 
-    /// Subject va Issuer parse
-    private func parseSubjectAndIssuer(_ certificate: SecCertificate) -> (
-        subject: (
-            organization: String?, organizationUnit: String?, country: String?,
-            pinfl: String?, stir: String?
-        ),
-        issuer: String
-    ) {
-        // Simplified parsing - real implementatsiyada OID'lar bilan ishlash kerak
-
-        var issuerName: CFString?
-        // iOS 15+ uchun
-        if #available(iOS 15.0, *) {
-            // SecCertificateCopyIssuerSummary mavjud emas, oddiy nom ishlatamiz
-            issuerName = SecCertificateCopySubjectSummary(certificate)
-        }
-
-        let issuer = (issuerName as String?) ?? "Unknown Issuer"
-
-        // Subject ma'lumotlari (soddalashtirilgan)
-        let subject:
-            (
-                organization: String?, organizationUnit: String?,
-                country: String?, pinfl: String?, stir: String?
-            )
-        subject = (nil, nil, nil, nil, nil)
-
-        return (subject, issuer)
-    }
-
-    /// Validity dates parse
-    private func parseValidityDates(_ certificate: SecCertificate) -> (
-        Date, Date
-    ) {
-        // Simplified - real implementatsiyada SecCertificateCopyValues ishlatish kerak
-
-        let now = Date()
-        let validFrom = now.addingTimeInterval(-365 * 24 * 60 * 60)  // 1 yil oldin
-        let validTo = now.addingTimeInterval(365 * 24 * 60 * 60)  // 1 yil keyin
-
-        return (validFrom, validTo)
-    }
-
-    /// Algorithm aniqlash
-    private func detectAlgorithm(from certificate: SecCertificate) throws -> (
+    private func detectAlgorithm(from certificate: SecCertificate) -> (
         SignatureAlgorithm, Int
     ) {
 
@@ -523,49 +415,46 @@ public final class KeychainCertificateRepository: CertificateRepository,
             publicKey = SecCertificateCopyKey(certificate)
         }
 
-        guard let key = publicKey else {
-            // Default ECDSA P-256
-            return (.ecdsaP256, 256)
-        }
-
-        // Key attributes
-        guard let attributes = SecKeyCopyAttributes(key) as? [String: Any]
+        guard let key = publicKey,
+            let attributes = SecKeyCopyAttributes(key) as? [String: Any]
         else {
             return (.ecdsaP256, 256)
         }
 
-        let keyType = attributes[kSecAttrKeyType as String] as? String
+        // Key type va size olish
+        let keyTypeRef = attributes[kSecAttrKeyType as String]
         let keySize = attributes[kSecAttrKeySizeInBits as String] as? Int ?? 256
 
-        // Mapping
-        let algorithm: SignatureAlgorithm
-
-        switch (keyType, keySize) {
-        case (kSecAttrKeyTypeECSECPrimeRandom as String, 256),
-            (kSecAttrKeyTypeEC as String, 256):
-            algorithm = .ecdsaP256
-
-        case (kSecAttrKeyTypeECSECPrimeRandom as String, 384),
-            (kSecAttrKeyTypeEC as String, 384):
-            algorithm = .ecdsaP384
-
-        case (kSecAttrKeyTypeECSECPrimeRandom as String, 521),
-            (kSecAttrKeyTypeEC as String, 521):
-            algorithm = .ecdsaP521
-
-        case (kSecAttrKeyTypeRSA as String, 2048):
-            algorithm = .rsaSHA256
-
-        case (kSecAttrKeyTypeRSA as String, 3072):
-            algorithm = .rsaSHA384
-
-        case (kSecAttrKeyTypeRSA as String, 4096):
-            algorithm = .rsaSHA512
-
-        default:
-            algorithm = .ecdsaP256
+        // CFString ni String ga convert qilish
+        var keyTypeString: String = ""
+        if let cfString = keyTypeRef as CFTypeRef?,
+            CFGetTypeID(cfString) == CFStringGetTypeID()
+        {
+            keyTypeString = cfString as! CFString as String
         }
 
-        return (algorithm, keySize)
+        // EC key type'larni tekshirish
+        let ecSecPrimeRandom = kSecAttrKeyTypeECSECPrimeRandom as String
+        let ecType = kSecAttrKeyTypeEC as String
+        let rsaType = kSecAttrKeyTypeRSA as String
+
+        // Algorithm aniqlash
+        if keyTypeString == ecSecPrimeRandom || keyTypeString == ecType {
+            switch keySize {
+            case 256: return (.ecdsaP256, keySize)
+            case 384: return (.ecdsaP384, keySize)
+            case 521: return (.ecdsaP521, keySize)
+            default: return (.ecdsaP256, keySize)
+            }
+        } else if keyTypeString == rsaType {
+            switch keySize {
+            case 2048: return (.rsaSHA256, keySize)
+            case 3072: return (.rsaSHA384, keySize)
+            case 4096: return (.rsaSHA512, keySize)
+            default: return (.rsaSHA256, keySize)
+            }
+        }
+
+        return (.ecdsaP256, 256)
     }
 }

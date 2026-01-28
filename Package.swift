@@ -7,7 +7,7 @@ let package = Package(
 
     platforms: [
         .iOS(.v14),
-        .macOS(.v11),
+        .macOS(.v12),
     ],
 
     products: [
@@ -19,11 +19,14 @@ let package = Package(
 
     targets: [
         .target(
-            name: "Muhr"
+            name: "Muhr",
+            dependencies: [],
+            path: "Sources/Muhr"
         ),
         .testTarget(
             name: "MuhrTests",
-            dependencies: ["Muhr"]
+            dependencies: ["Muhr"],
+            path: "Tests/MuhrTests"
         ),
     ]
 )
