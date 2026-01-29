@@ -231,10 +231,14 @@ public final class VerifySignatureUseCase: Sendable {
 
         // Muddati tugagan bo'lsa (lekin imzo hali ham tekshiriladi)
         if certificate.isExpired {
-            warnings.append(
-                "⚠️ Sertifikat muddati tugagan: \(certificate.validTo.formatted()). "
+            if #available(iOS 15.0, *) {
+                warnings.append(
+                    "⚠️ Sertifikat muddati tugagan: \(certificate.validTo.formatted()). "
                     + "Imzo imzolangan vaqtda haqiqiy bo'lgan bo'lishi mumkin."
-            )
+                )
+            } else {
+                    // Fallback on earlier versions
+            }
         }
 
         // Muddati tugashiga oz qolgan bo'lsa

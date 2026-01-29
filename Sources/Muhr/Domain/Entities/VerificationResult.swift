@@ -233,6 +233,7 @@ public enum VerificationError: Error, Sendable, Equatable {
     case unknown(String)
 
     /// Xato tavsifi
+    @available(iOS 15.0, *)
     public var localizedDescription: String {
         switch self {
         case .invalidSignature:

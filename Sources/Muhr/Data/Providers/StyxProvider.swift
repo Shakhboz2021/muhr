@@ -70,6 +70,37 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         #endif
     }
 
+    // MARK: - File Discovery
+    /// Documents directory'dan .p12/.pfx fayllarni topish
+    public static func discoverCertificateFiles() -> [URL] {
+
+        guard
+            let documentsURL = FileManager.default.urls(
+                for: .documentDirectory,
+                in: .userDomainMask
+            ).first
+        else {
+            return []
+        }
+
+        do {
+            let files = try FileManager.default.contentsOfDirectory(
+                at: documentsURL,
+                includingPropertiesForKeys: nil
+            )
+
+            return files.filter { url in
+                let ext = url.pathExtension.lowercased()
+                return ext == "p12" || ext == "pfx"
+            }
+        } catch {
+            #if DEBUG
+                print("❌ Failed to list documents: \(error)")
+            #endif
+            return []
+        }
+    }
+
     public func shutdown() async {
         await MainActor.run {
             self.availableCertificates = []

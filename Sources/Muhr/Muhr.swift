@@ -88,6 +88,23 @@ public enum Muhr {
         provider?.remainingAttempts ?? 0
     }
 
+    // MARK: - File Discovery
+
+    /// Documents directory'dan .p12/.pfx fayllarni topish
+    ///
+    /// - Returns: Topilgan fayl URL'lari
+    ///
+    /// ## Misol:
+    /// ```swift
+    /// let files = Muhr.discoverCertificateFiles()
+    /// for file in files {
+    ///     print(file.lastPathComponent) // "muhammad.p12"
+    /// }
+    /// ```
+    public static func discoverCertificateFiles() -> [URL] {
+        return StyxProvider.discoverCertificateFiles()
+    }
+
     // MARK: - Certificate Import
 
     /// Certificate import qilish (fayldan)
