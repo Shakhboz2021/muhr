@@ -6,6 +6,8 @@
 //
 
 import Foundation
+#if os(iOS)
+import UIKit
 
 // MARK: - Muhr
 /// Muhr - O'zbekistonda raqamli imzo kutubxonasi
@@ -280,3 +282,65 @@ public enum Muhr {
         try await provider.clearAll()
     }
 }
+
+// MARK: - UI Components
+#if os(iOS)
+@available(iOS 13.0, *)
+extension Muhr {
+
+    /// UIKit: Certificate picker controller
+    ///
+    /// ## Misol:
+    /// ```swift
+    /// let picker = Muhr.makeCertificatePickerViewController()
+    /// picker.onInstallSuccess = { cert in
+    ///     print("Installed: \(cert.commonName)")
+    ///     self.dismiss(animated: true)
+    /// }
+    /// picker.onCancel = {
+    ///     self.dismiss(animated: true)
+    /// }
+    /// let nav = UINavigationController(rootViewController: picker)
+    /// present(nav, animated: true)
+    /// ```
+    public static func makeCertificatePickerViewController()
+        -> CertificatePickerViewController
+    {
+        return CertificatePickerViewController()
+    }
+}
+#endif
+
+#if canImport(SwiftUI)
+    import SwiftUI
+
+    @available(iOS 14.0, macOS 11.0, *)
+    extension Muhr {
+
+        /// SwiftUI: Certificate picker view
+        ///
+        /// ## Misol:
+        /// ```swift
+        /// .sheet(isPresented: $showPicker) {
+        ///     Muhr.certificatePickerView(
+        ///         onInstallSuccess: { cert in
+        ///             print("Installed: \(cert.commonName)")
+        ///             showPicker = false
+        ///         },
+        ///         onCancel: {
+        ///             showPicker = false
+        ///         }
+        ///     )
+        /// }
+        /// ```
+        public static func certificatePickerView(
+            onInstallSuccess: ((CertificateInfo) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> CertificatePickerView {
+            return CertificatePickerView(
+                onInstallSuccess: onInstallSuccess,
+                onCancel: onCancel
+            )
+        }
+    }
+#endif
