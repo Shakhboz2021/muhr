@@ -10,173 +10,134 @@ import Foundation
 // MARK: - Muhr
 /// Muhr - O'zbekistonda raqamli imzo kutubxonasi
 ///
-/// Bu facade class kutubxonaning barcha funksiyalariga
-/// oddiy va qulay kirish imkonini beradi.
-///
-/// ## Asosiy Imkoniyatlar:
-/// - 🔐 Ma'lumotlarni imzolash
-/// - ✅ Imzolarni tekshirish
-/// - 📜 Sertifikatlarni boshqarish
-/// - 📦 PKCS#12 import
+/// ## Xavfsizlik Modeli (Styx):
+/// - Certificate password har safar talab qilinadi
+/// - 3 marta xato = certificate o'chiriladi
+/// - Keychain'da SHA256(password) bilan saqlanadi
 ///
 /// ## Quick Start:
 /// ```swift
 /// import Muhr
 ///
-/// // 1. Muhr'ni ishga tushirish
+/// // 1. Ishga tushirish
 /// try await Muhr.initialize()
 ///
-/// // 2. Sertifikat import qilish
+/// // 2. Certificate import (birinchi marta)
 /// let cert = try await Muhr.importCertificate(
 ///     fileURL: p12URL,
 ///     password: "secret"
 /// )
 ///
-/// // 3. Ma'lumotni imzolash
-/// let result = try await Muhr.sign(data: document)
-/// print(result.signatureBase64)
+/// // 3. Imzolash (har safar password kerak)
+/// let result = try await Muhr.sign(
+///     data: document,
+///     password: "secret"
+/// )
 ///
-/// // 4. Imzoni tekshirish
+/// // 4. Tekshirish
 /// let verification = try await Muhr.verify(
 ///     signature: result.signature,
-///     originalData: document
+///     originalData: document,
+///     certificate: result.certificate
 /// )
-/// print(verification.isValid) // true
 /// ```
 public enum Muhr {
 
     // MARK: - Version
 
-    /// Kutubxona versiyasi
     public static let version = "1.0.0"
-
-    /// Build raqami
     public static let build = 1
 
-    // MARK: - Shared Instance
-    /// Shared manager instance
-    private static var _shared: MuhrManager?
+    // MARK: - Provider
 
-    /// Shared manager (lazy initialization)
-    private static var shared: MuhrManager {
-        get throws {
-            guard let manager = _shared else {
-                throw MuhrError.providerNotInitialized
-            }
-            return manager
-        }
-    }
+    private static var provider: StyxProvider?
 
     // MARK: - Initialization
 
     /// Muhr'ni ishga tushirish
-    ///
-    /// Bu metod boshqa metodlardan oldin chaqirilishi shart.
-    ///
-    /// - Parameter providerType: Provider turi (default: .styx)
-    /// - Throws: `MuhrError.providerConfigurationError`
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// // AppDelegate yoki App init'da
-    /// try await Muhr.initialize()
-    /// ```
-    public static func initialize(provider providerType: ProviderType = .styx)
-        async throws
-    {
-        let manager = MuhrManager()
-        try await manager.initialize(provider: providerType)
-        _shared = manager
+    public static func initialize() async throws {
+        let styx = StyxProvider()
+        try await styx.initialize()
+        provider = styx
+
+        #if DEBUG
+            print("✅ Muhr initialized")
+        #endif
     }
 
-    /// Muhr ishga tushirilganmi?
+    /// Ishga tushirilganmi?
     public static var isInitialized: Bool {
-        _shared?.isInitialized ?? false
+        provider?.isInitialized ?? false
     }
 
     /// Muhr'ni to'xtatish
     public static func shutdown() async {
-        await _shared?.shutdown()
-        _shared = nil
+        await provider?.shutdown()
+        provider = nil
     }
 
-    // MARK: - Certificates
+    // MARK: - Certificate Status
 
-    /// Barcha sertifikatlarni olish
-    ///
-    /// - Returns: Sertifikatlar ro'yxati
-    /// - Throws: `MuhrError`
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let certs = try await Muhr.getCertificates()
-    /// for cert in certs {
-    ///     print(cert.commonName)
-    /// }
-    /// ```
-    public static func getCertificates() async throws -> [CertificateInfo] {
-        return try await shared.getCertificates()
+    /// Certificate o'rnatilganmi?
+    public static func hasCertificate() -> Bool {
+        provider?.hasCertificate() ?? false
     }
 
-    /// Faqat valid sertifikatlarni olish
-    public static func getValidCertificates() async throws -> [CertificateInfo]
-    {
-        return try await shared.getValidCertificates()
+    /// Qolgan urinishlar soni
+    public static var remainingAttempts: Int {
+        provider?.remainingAttempts ?? 0
     }
 
-    /// Imzolash mumkin bo'lgan sertifikatlarni olish
-    public static func getSigningCertificates() async throws
-        -> [CertificateInfo]
-    {
-        return try await shared.getSigningCertificates()
-    }
+    // MARK: - Certificate Import
 
-    /// Sertifikat import qilish (fayldan)
+    /// Certificate import qilish (fayldan)
     ///
     /// - Parameters:
-    ///   - fileURL: .p12 yoki .pfx fayl manzili
-    ///   - password: Fayl paroli
-    ///   - setAsDefault: Default sertifikat qilish
-    /// - Returns: Import qilingan sertifikat
-    /// - Throws: `MuhrError`
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let cert = try await Muhr.importCertificate(
-    ///     fileURL: url,
-    ///     password: "123456"
-    /// )
-    /// ```
+    ///   - fileURL: .p12 yoki .pfx fayl
+    ///   - password: Certificate password
+    /// - Returns: Import qilingan certificate info
     public static func importCertificate(
         fileURL: URL,
-        password: String,
-        setAsDefault: Bool = true
+        password: String
     ) async throws -> CertificateInfo {
-        return try await shared.importCertificate(
-            fileURL: fileURL,
-            password: password,
-            setAsDefault: setAsDefault
+        guard let provider = provider else {
+            throw MuhrError.providerNotInitialized
+        }
+        let data = try Data(contentsOf: fileURL)
+        return try await provider.importCertificate(
+            data: data,
+            password: password
         )
     }
 
-    /// Sertifikat import qilish (Data'dan)
+    /// Certificate import qilish (Data'dan)
     public static func importCertificate(
         data: Data,
-        password: String,
-        setAsDefault: Bool = true
+        password: String
     ) async throws -> CertificateInfo {
-        return try await shared.importCertificate(
+        guard let provider = provider else {
+            throw MuhrError.providerNotInitialized
+        }
+        return try await provider.importCertificate(
             data: data,
-            password: password,
-            setAsDefault: setAsDefault
+            password: password
         )
     }
 
-    /// Sertifikatni o'chirish
-    public static func deleteCertificate(_ certificate: CertificateInfo)
-        async throws
-    {
-        try await shared.deleteCertificate(certificate)
+    // MARK: - Password Verification
+
+    /// Password tekshirish
+    ///
+    /// Login uchun ishlatiladi.
+    /// 3 marta xato bo'lsa certificate o'chiriladi.
+    ///
+    /// - Parameter password: Certificate password
+    /// - Returns: true = to'g'ri
+    public static func verifyPassword(_ password: String) async throws -> Bool {
+        guard let provider = provider else {
+            throw MuhrError.providerNotInitialized
+        }
+        return try await provider.verifyPassword(password)
     }
 
     // MARK: - Signing
@@ -185,91 +146,59 @@ public enum Muhr {
     ///
     /// - Parameters:
     ///   - data: Imzolanadigan ma'lumot
-    ///   - certificate: Sertifikat (nil bo'lsa default ishlatiladi)
-    /// - Returns: Imzolash natijasi
-    /// - Throws: `MuhrError`
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let document = "Hello, World!".data(using: .utf8)!
-    /// let result = try await Muhr.sign(data: document)
-    /// print(result.signatureBase64)
-    /// ```
-    public static func sign(
-        data: Data,
-        certificate: CertificateInfo? = nil
-    ) async throws -> SignatureResult {
-        return try await shared.sign(data: data, certificate: certificate)
+    ///   - password: Certificate password
+    /// - Returns: Imzo natijasi
+    public static func sign(data: Data, password: String) async throws
+        -> SignatureResult
+    {
+        guard let provider = provider else {
+            throw MuhrError.providerNotInitialized
+        }
+        return try await provider.sign(data: data, password: password)
     }
 
     /// String imzolash
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let result = try await Muhr.sign(string: "Hello, World!")
-    /// ```
     public static func sign(
         string: String,
         encoding: String.Encoding = .utf8,
-        certificate: CertificateInfo? = nil
+        password: String
     ) async throws -> SignatureResult {
         guard let data = string.data(using: encoding) else {
             throw MuhrError.signingFailed(reason: "String encoding failed")
         }
-        return try await sign(data: data, certificate: certificate)
+        return try await sign(data: data, password: password)
     }
 
     /// JSON imzolash
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let payload = ["action": "transfer", "amount": "1000"]
-    /// let result = try await Muhr.sign(json: payload)
-    /// ```
     public static func sign(
         json: [String: Any],
-        certificate: CertificateInfo? = nil
+        password: String
     ) async throws -> SignatureResult {
         let data = try JSONSerialization.data(
             withJSONObject: json,
             options: [.sortedKeys]
         )
-        return try await sign(data: data, certificate: certificate)
+        return try await sign(data: data, password: password)
     }
 
     /// Encodable ob'ekt imzolash
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// struct Payment: Encodable {
-    ///     let id: String
-    ///     let amount: Decimal
-    /// }
-    /// let payment = Payment(id: "123", amount: 1000)
-    /// let result = try await Muhr.sign(object: payment)
-    /// ```
     public static func sign<T: Encodable>(
         object: T,
-        certificate: CertificateInfo? = nil
+        password: String
     ) async throws -> SignatureResult {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(object)
-        return try await sign(data: data, certificate: certificate)
+        return try await sign(data: data, password: password)
     }
 
     /// Fayl imzolash
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let result = try await Muhr.sign(fileURL: documentURL)
-    /// ```
     public static func sign(
         fileURL: URL,
-        certificate: CertificateInfo? = nil
+        password: String
     ) async throws -> SignatureResult {
         let data = try Data(contentsOf: fileURL)
-        return try await sign(data: data, certificate: certificate)
+        return try await sign(data: data, password: password)
     }
 
     // MARK: - Verification
@@ -279,26 +208,17 @@ public enum Muhr {
     /// - Parameters:
     ///   - signature: Imzo (raw bytes)
     ///   - originalData: Original ma'lumot
-    ///   - certificate: Sertifikat (optional)
+    ///   - certificate: Sertifikat
     /// - Returns: Tekshirish natijasi
-    /// - Throws: `MuhrError`
-    ///
-    /// ## Misol:
-    /// ```swift
-    /// let result = try await Muhr.verify(
-    ///     signature: signatureData,
-    ///     originalData: document
-    /// )
-    /// if result.isValid {
-    ///     print("✅ Imzo haqiqiy")
-    /// }
-    /// ```
     public static func verify(
         signature: Data,
         originalData: Data,
-        certificate: CertificateInfo? = nil
+        certificate: CertificateInfo
     ) async throws -> VerificationResult {
-        return try await shared.verify(
+        guard let provider = provider else {
+            throw MuhrError.providerNotInitialized
+        }
+        return try await provider.verify(
             signature: signature,
             originalData: originalData,
             certificate: certificate
@@ -309,7 +229,7 @@ public enum Muhr {
     public static func verify(
         signatureBase64: String,
         originalData: Data,
-        certificate: CertificateInfo? = nil
+        certificate: CertificateInfo
     ) async throws -> VerificationResult {
         guard let signatureData = Data(base64Encoded: signatureBase64) else {
             return VerificationResult.failure(errors: [.invalidSignature])
@@ -332,167 +252,14 @@ public enum Muhr {
             certificate: signatureResult.certificate
         )
     }
-}
 
-// MARK: - Muhr Manager (Internal)
-/// Ichki manager class
-internal final class MuhrManager: @unchecked Sendable {
+    // MARK: - Clear
 
-    // MARK: - Properties
-
-    private(set) var isInitialized = false
-    private var provider: ProviderProtocol?
-
-    // UseCases
-    private var signDataUseCase: SignDataUseCase?
-    private var verifySignatureUseCase: VerifySignatureUseCase?
-    private var importCertificateUseCase: ImportCertificateUseCase?
-    private var getCertificatesUseCase: GetCertificatesUseCase?
-
-    // MARK: - Initialization
-
-    func initialize(provider providerType: ProviderType) async throws {
-
-        // Provider yaratish
-        let newProvider: ProviderProtocol
-
-        switch providerType {
-        case .styx:
-            newProvider = StyxProvider()
-        case .metin, .eImzo:
-            throw MuhrError.providerNotSupported(
-                providerName: providerType.displayName
-            )
-        }
-
-        // Provider'ni ishga tushirish
-        try await newProvider.initialize()
-
-        // Repository'lar
-        let certRepo = KeychainCertificateRepository()
-        let signRepo = KeychainSigningRepository(
-            certificateRepository: certRepo
-        )
-
-        // UseCase'lar
-        signDataUseCase = SignDataUseCase(
-            signingRepository: signRepo,
-            certificateRepository: certRepo
-        )
-        verifySignatureUseCase = VerifySignatureUseCase(
-            signingRepository: signRepo
-        )
-        importCertificateUseCase = ImportCertificateUseCase(
-            certificateRepository: certRepo
-        )
-        getCertificatesUseCase = GetCertificatesUseCase(
-            certificateRepository: certRepo
-        )
-
-        self.provider = newProvider
-        self.isInitialized = true
-
-        #if DEBUG
-            print("✅ Muhr initialized with \(providerType.displayName)")
-        #endif
-    }
-
-    func shutdown() async {
-        await provider?.shutdown()
-        provider = nil
-        isInitialized = false
-
-        #if DEBUG
-            print("🔒 Muhr shutdown")
-        #endif
-    }
-
-    // MARK: - Certificates
-
-    func getCertificates() async throws -> [CertificateInfo] {
-        guard let useCase = getCertificatesUseCase else {
+    /// Barcha certificate'larni o'chirish
+    public static func clearAll() async throws {
+        guard let provider = provider else {
             throw MuhrError.providerNotInitialized
         }
-        return try await useCase.execute()
-    }
-
-    func getValidCertificates() async throws -> [CertificateInfo] {
-        guard let useCase = getCertificatesUseCase else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await useCase.execute(filter: .validOnly)
-    }
-
-    func getSigningCertificates() async throws -> [CertificateInfo] {
-        guard let useCase = getCertificatesUseCase else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await useCase.execute(filter: .canSign)
-    }
-
-    func importCertificate(
-        fileURL: URL,
-        password: String,
-        setAsDefault: Bool
-    ) async throws -> CertificateInfo {
-        guard let useCase = importCertificateUseCase else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await useCase.execute(
-            fileURL: fileURL,
-            password: password,
-            setAsDefault: setAsDefault
-        )
-    }
-
-    func importCertificate(
-        data: Data,
-        password: String,
-        setAsDefault: Bool
-    ) async throws -> CertificateInfo {
-        guard let useCase = importCertificateUseCase else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await useCase.execute(
-            data: data,
-            password: password,
-            setAsDefault: setAsDefault
-        )
-    }
-
-    func deleteCertificate(_ certificate: CertificateInfo) async throws {
-        guard let provider = provider as? StyxProvider else {
-            throw MuhrError.providerNotInitialized
-        }
-        try await provider.deleteCertificate(certificate)
-    }
-
-
-    // MARK: - Signing
-
-    func sign(data: Data, certificate: CertificateInfo?) async throws
-        -> SignatureResult
-    {
-        guard let useCase = signDataUseCase else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await useCase.execute(data: data, certificate: certificate)
-    }
-
-    // MARK: - Verification
-
-    func verify(
-        signature: Data,
-        originalData: Data,
-        certificate: CertificateInfo?
-    ) async throws -> VerificationResult {
-        guard let useCase = verifySignatureUseCase else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await useCase.execute(
-            signature: signature,
-            originalData: originalData,
-            certificate: certificate
-        )
+        try await provider.clearAll()
     }
 }
