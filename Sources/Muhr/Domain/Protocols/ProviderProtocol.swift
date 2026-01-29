@@ -134,6 +134,30 @@ public protocol ProviderProtocol: AnyObject, Sendable {
     /// Resurslarni tozalash, ulanishlarni yopish.
     func shutdown() async
 
+    // MARK: - Authentication (Provider-specific)
+
+    /// Provider uchun autentifikatsiya talab qiladimi?
+    var requiresAuthentication: Bool { get }
+
+    /// Autentifikatsiya bilan imzolash
+    ///
+    /// - Parameters:
+    ///   - data: Imzolanadigan ma'lumot
+    ///   - certificate: Sertifikat
+    ///   - credential: Provider-specific credential (Styx: password, Metin: SMS code)
+    /// - Returns: Imzolash natijasi
+    func sign(
+        data: Data,
+        with certificate: CertificateInfo,
+        credential: String
+    ) async throws -> SignatureResult
+
+    /// Credential tekshirish (login uchun)
+    ///
+    /// - Parameter credential: Tekshiriladigan credential
+    /// - Returns: true = to'g'ri
+    func verifyCredential(_ credential: String) async throws -> Bool
+
     // MARK: - Certificate Operations
 
     /// Sertifikatlarni yuklash
@@ -197,6 +221,26 @@ public protocol ProviderProtocol: AnyObject, Sendable {
     /// - Parameter configuration: Yangi konfiguratsiya
     func updateConfiguration(_ configuration: ProviderConfiguration)
         async throws
+}
+
+extension ProviderProtocol {
+    /// Default: autentifikatsiya talab qilmaydi
+    public var requiresAuthentication: Bool { false }
+
+    /// Default: credential'siz imzolash
+    public func sign(
+        data: Data,
+        with certificate: CertificateInfo,
+        credential: String
+    ) async throws -> SignatureResult {
+        // Default - credential'ni ignore qilish
+        return try await sign(data: data, with: certificate)
+    }
+
+    /// Default: har doim true
+    public func verifyCredential(_ credential: String) async throws -> Bool {
+        return true
+    }
 }
 
 // MARK: - Provider Configuration

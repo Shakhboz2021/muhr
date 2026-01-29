@@ -179,19 +179,6 @@ public enum Muhr {
         try await shared.deleteCertificate(certificate)
     }
 
-    /// Default sertifikatni olish
-    public static func getDefaultCertificate() async throws -> CertificateInfo?
-    {
-        return try await shared.getDefaultCertificate()
-    }
-
-    /// Default sertifikatni belgilash
-    public static func setDefaultCertificate(_ certificate: CertificateInfo)
-        async throws
-    {
-        try await shared.setDefaultCertificate(certificate)
-    }
-
     // MARK: - Signing
 
     /// Ma'lumotni imzolash
@@ -480,19 +467,6 @@ internal final class MuhrManager: @unchecked Sendable {
         try await provider.deleteCertificate(certificate)
     }
 
-    func getDefaultCertificate() async throws -> CertificateInfo? {
-        guard let provider = provider as? StyxProvider else {
-            throw MuhrError.providerNotInitialized
-        }
-        return try await provider.getDefaultCertificate()
-    }
-
-    func setDefaultCertificate(_ certificate: CertificateInfo) async throws {
-        guard let provider = provider as? StyxProvider else {
-            throw MuhrError.providerNotInitialized
-        }
-        try await provider.setDefaultCertificate(certificate)
-    }
 
     // MARK: - Signing
 

@@ -197,6 +197,8 @@ public enum MuhrError: Error, Sendable {
 
     /// Operatsiya qo'llab-quvvatlanmaydi
     case operationNotSupported
+
+    case maxAttemptsExceeded
 }
 
 // MARK: - LocalizedError
@@ -304,6 +306,9 @@ extension MuhrError: LocalizedError {
             return "Noma'lum xato: \(message)"
         case .operationNotSupported:
             return "Bu operatsiya qo'llab-quvvatlanmaydi"
+        case .maxAttemptsExceeded:
+            return
+                "Maksimal urinishlar soni oshdi. Certificate qayta o'rnatilishi kerak."
         }
     }
 
@@ -420,6 +425,8 @@ extension MuhrError {
         // General: 0xxx
         case .unknown: return 9999
         case .operationNotSupported: return 9998
+        case .maxAttemptsExceeded:
+            return 9997
         }
     }
 }
