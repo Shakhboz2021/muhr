@@ -7,11 +7,13 @@
 
 import SwiftUI
 
-// MARK: - Certificate Picker View
 @available(iOS 14.0, macOS 11.0, *)
 public struct CertificatePickerView: View {
 
     @StateObject private var viewModel = CertificatePickerViewModel()
+    @Environment(\.presentationMode) var presentationMode
+
+    @State private var isPasswordVisible = false
 
     // MARK: - Callbacks
 
@@ -33,13 +35,13 @@ public struct CertificatePickerView: View {
     public var body: some View {
         NavigationView {
             content
-                .navigationTitle("Сертификат ўрнатиш")
+                .navigationTitle("Сертификат")
                 #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Бекор") {
-                                viewModel.cancel()
+                                handleCancel()
                             }
                         }
                     }
@@ -47,15 +49,19 @@ public struct CertificatePickerView: View {
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Бекор") {
-                                viewModel.cancel()
+                                handleCancel()
                             }
                         }
                     }
                 #endif
         }
         .onAppear {
-            viewModel.onInstallSuccess = onInstallSuccess
-            viewModel.onCancel = onCancel
+            viewModel.onInstallSuccess = { cert in
+                onInstallSuccess?(cert)
+            }
+            viewModel.onCancel = {
+                handleCancel()
+            }
             viewModel.loadFiles()
         }
     }
@@ -67,138 +73,153 @@ public struct CertificatePickerView: View {
         if viewModel.files.isEmpty {
             emptyState
         } else {
-            fileListContent
+            mainContent
         }
     }
 
-    // MARK: - Empty State
+    // MARK: - Empty State (Full Screen)
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "doc.badge.plus")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
+        ZStack {
+            MuhrTheme.Colors.systemGroupedBackground
+                .ignoresSafeArea()
 
-            Text("Сертификат топилмади")
-                .font(.headline)
+            VStack(spacing: 16) {
+                Image(systemName: "doc.badge.plus")
+                    .font(.system(size: 56))
+                    .foregroundColor(MuhrTheme.Colors.tertiaryLabel)
 
-            Text("Documents папкасига .p12 ёки .pfx файлни қўшинг")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-    }
+                Text("Сертификат топилмади")
+                    .font(.headline)
+                    .foregroundColor(MuhrTheme.Colors.label)
 
-    // MARK: - File List Content
-
-    private var fileListContent: some View {
-        VStack(spacing: 0) {
-            // File list
-            List(viewModel.files, selection: $viewModel.selectedFile) { file in
-                CertificateFileRow(
-                    file: file,
-                    isSelected: viewModel.selectedFile?.id == file.id
-                )
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    viewModel.selectedFile = file
-                }
+                Text("Documents папкасига\n.p12 ёки .pfx файлни қўшинг")
+                    .font(.subheadline)
+                    .foregroundColor(MuhrTheme.Colors.secondaryLabel)
+                    .multilineTextAlignment(.center)
             }
-            .listStyle(.plain)
-
-            Divider()
-
-            // Bottom section
-            bottomSection
-                .padding()
-                #if os(iOS)
-                    .background(Color(.systemBackground))
-                #else
-                    .background(Color(NSColor.windowBackgroundColor))
-                #endif
         }
     }
 
-    // MARK: - Bottom Section
+    // MARK: - Main Content (List + Fixed Bottom)
+
+    private var mainContent: some View {
+        ZStack {
+            MuhrTheme.Colors.systemGroupedBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Scrollable list
+                Spacer()
+                List {
+                    Section(header: Text("Сертификатни танланг")) {
+                        ForEach(viewModel.files) { file in
+                            CertificateFileRow(
+                                file: file,
+                                isSelected: viewModel.selectedFile?.id
+                                    == file.id,
+                                onTap: {
+                                    viewModel.selectedFile = file
+                                }
+                            )
+                        }
+                    }
+                }
+                .listStyle(InsetGroupedListStyle())
+
+                // Fixed bottom section
+                bottomSection
+            }
+        }
+    }
+
+    // MARK: - Bottom Section (Fixed)
 
     private var bottomSection: some View {
         VStack(spacing: 16) {
             // Password field
-            SecureField("Сертификат пароли", text: $viewModel.password)
-                #if os(iOS)
-                    .textFieldStyle(.roundedBorder)
-                #endif
+            VStack(alignment: .leading, spacing: 6) {
+                Text("ПАРОЛ")
+                    .font(.caption)
+                    .foregroundColor(MuhrTheme.Colors.secondaryLabel)
+
+                HStack {
+                    if isPasswordVisible {
+                        TextField(
+                            "Паролни киритинг",
+                            text: $viewModel.password,
+                            onCommit: {
+                                install()
+                            }
+                        )
+                        #if os(iOS)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                        #endif
+                    } else {
+                        SecureField(
+                            "Паролни киритинг",
+                            text: $viewModel.password,
+                            onCommit: {
+                                install()
+                            }
+                        )
+                    }
+
+                    Button(action: { isPasswordVisible.toggle() }) {
+                        Image(
+                            systemName: isPasswordVisible ? "eye.slash" : "eye"
+                        )
+                        .foregroundColor(MuhrTheme.Colors.tertiaryLabel)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(12)
+                .background(MuhrTheme.Colors.secondarySystemGroupedBackground)
+                .cornerRadius(10)
                 .disabled(viewModel.isLoading)
 
-            // Error message
-            if let error = viewModel.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.red)
+                // Error message
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(MuhrTheme.Colors.systemRed)
+                }
             }
 
             // Install button
-            Button(action: {
-                Task {
-                    await viewModel.install()
-                }
-            }) {
-                HStack {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            #if os(iOS)
-                                .progressViewStyle(
-                                    CircularProgressViewStyle(tint: .white)
-                                )
-                            #endif
-                    } else {
-                        Text("Ўрнатиш")
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            MuhrButton(
+                title: "Ўрнатиш",
+                isLoading: viewModel.isLoading,
+                isEnabled: viewModel.canInstall
+            ) {
+                install()
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!viewModel.canInstall)
+        }
+        .padding(16)
+        .background(
+            MuhrTheme.Colors.systemGroupedBackground
+                .shadow(
+                    color: Color.black.opacity(0.05),
+                    radius: 8,
+                    x: 0,
+                    y: -4
+                )
+        )
+    }
+
+    // MARK: - Actions
+
+    private func install() {
+        guard viewModel.canInstall else { return }
+        Task {
+            await viewModel.install()
         }
     }
-}
 
-// MARK: - Certificate File Row
-@available(iOS 14.0, macOS 11.0, *)
-struct CertificateFileRow: View {
-
-    let file: CertificateFile
-    let isSelected: Bool
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Icon
-            Image(systemName: "doc.badge.lock.fill")
-                .font(.title2)
-                .foregroundColor(.blue)
-
-            // Info
-            VStack(alignment: .leading, spacing: 4) {
-                Text(file.name)
-                    .font(.body)
-                    .lineLimit(1)
-
-                Text(file.formattedSize)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer()
-
-            // Checkmark
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            }
-        }
-        .padding(.vertical, 4)
+    private func handleCancel() {
+        onCancel?()
+        presentationMode.wrappedValue.dismiss()
     }
 }
 
