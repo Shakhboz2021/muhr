@@ -125,11 +125,11 @@ public struct MuhrDestructiveButton: View {
     struct MuhrButton_Previews: PreviewProvider {
         static var previews: some View {
             VStack(spacing: 16) {
-                MuhrButton(title: "Ўрнатиш") {}
-                MuhrButton(title: "Ўрнатиш", isLoading: true) {}
-                MuhrButton(title: "Ўрнатиш", isEnabled: false) {}
-                MuhrSecondaryButton(title: "Бекор қилиш") {}
-                MuhrDestructiveButton(title: "Ўчириш") {}
+                MuhrButton(title: L10n.installButton) {}
+                MuhrButton(title: L10n.installButton, isLoading: true) {}
+                MuhrButton(title: L10n.installButton, isEnabled: false) {}
+                MuhrSecondaryButton(title: L10n.cancel) {}
+                MuhrDestructiveButton(title: L10n.deleteButton) {}
             }
             .padding()
         }

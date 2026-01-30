@@ -11,47 +11,196 @@ import SwiftUI
 @available(iOS 14.0, macOS 11.0, *)
 public enum MuhrTheme {
 
-    // MARK: - Colors (Semantic iOS Colors)
+    // MARK: - Colors (Semantic System Colors)
     public enum Colors {
-        // Labels
-        public static let label = Color(.label)
-        public static let secondaryLabel = Color(.secondaryLabel)
-        public static let tertiaryLabel = Color(.tertiaryLabel)
 
-        // Backgrounds
-        public static let systemBackground = Color(.systemBackground)
-        public static let secondarySystemBackground = Color(
-            .secondarySystemBackground
-        )
-        public static let tertiarySystemBackground = Color(
-            .tertiarySystemBackground
-        )
-        public static let systemGroupedBackground = Color(
-            .systemGroupedBackground
-        )
-        public static let secondarySystemGroupedBackground = Color(
-            .secondarySystemGroupedBackground
-        )
+        // MARK: - Labels
+        public static let label: Color = {
+            #if os(iOS)
+                Color(UIColor.label)
+            #elseif os(macOS)
+                Color(NSColor.labelColor)
+            #endif
+        }()
 
-        // Fills
-        public static let systemFill = Color(.systemFill)
-        public static let secondarySystemFill = Color(.secondarySystemFill)
-        public static let tertiarySystemFill = Color(.tertiarySystemFill)
+        public static let secondaryLabel: Color = {
+            #if os(iOS)
+                Color(UIColor.secondaryLabel)
+            #elseif os(macOS)
+                Color(NSColor.secondaryLabelColor)
+            #endif
+        }()
 
-        // Separators
-        public static let separator = Color(.separator)
-        public static let opaqueSeparator = Color(.opaqueSeparator)
+        public static let tertiaryLabel: Color = {
+            #if os(iOS)
+                Color(UIColor.tertiaryLabel)
+            #elseif os(macOS)
+                Color(NSColor.tertiaryLabelColor)
+            #endif
+        }()
 
-        // System Colors
-        public static let systemBlue = Color(.systemBlue)
-        public static let systemGreen = Color(.systemGreen)
-        public static let systemRed = Color(.systemRed)
-        public static let systemOrange = Color(.systemOrange)
-        public static let systemGray = Color(.systemGray)
-        public static let systemGray2 = Color(.systemGray2)
-        public static let systemGray3 = Color(.systemGray3)
-        public static let systemGray4 = Color(.systemGray4)
-        public static let systemGray5 = Color(.systemGray5)
-        public static let systemGray6 = Color(.systemGray6)
+        // MARK: - Backgrounds
+        public static let systemBackground: Color = {
+            #if os(iOS)
+                Color(UIColor.systemBackground)
+            #elseif os(macOS)
+                Color(NSColor.windowBackgroundColor)
+            #endif
+        }()
+
+        public static let secondarySystemBackground: Color = {
+            #if os(iOS)
+                Color(UIColor.secondarySystemBackground)
+            #elseif os(macOS)
+                Color(NSColor.controlBackgroundColor)
+            #endif
+        }()
+
+        public static let tertiarySystemBackground: Color = {
+            #if os(iOS)
+                Color(UIColor.tertiarySystemBackground)
+            #elseif os(macOS)
+                Color(NSColor.textBackgroundColor)
+            #endif
+        }()
+
+        public static let systemGroupedBackground: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGroupedBackground)
+            #elseif os(macOS)
+                Color(NSColor.windowBackgroundColor)
+            #endif
+        }()
+
+        public static let secondarySystemGroupedBackground: Color = {
+            #if os(iOS)
+                Color(UIColor.secondarySystemGroupedBackground)
+            #elseif os(macOS)
+                Color(NSColor.controlBackgroundColor)
+            #endif
+        }()
+
+        // MARK: - Fills
+        public static let systemFill: Color = {
+            #if os(iOS)
+                Color(UIColor.systemFill)
+            #elseif os(macOS)
+                Color(NSColor.quaternaryLabelColor)
+            #endif
+        }()
+
+        public static let secondarySystemFill: Color = {
+            #if os(iOS)
+                Color(UIColor.secondarySystemFill)
+            #elseif os(macOS)
+                Color(NSColor.tertiaryLabelColor)
+            #endif
+        }()
+
+        public static let tertiarySystemFill: Color = {
+            #if os(iOS)
+                Color(UIColor.tertiarySystemFill)
+            #elseif os(macOS)
+                Color(NSColor.secondaryLabelColor)
+            #endif
+        }()
+
+        // MARK: - Separators
+        public static let separator: Color = {
+            #if os(iOS)
+                Color(UIColor.separator)
+            #elseif os(macOS)
+                Color(NSColor.separatorColor)
+            #endif
+        }()
+
+        public static let opaqueSeparator: Color = {
+            #if os(iOS)
+                Color(UIColor.opaqueSeparator)
+            #elseif os(macOS)
+                Color(NSColor.gridColor)
+            #endif
+        }()
+
+        // MARK: - System Accent Colors
+        public static let systemBlue: Color = {
+            #if os(iOS)
+                Color(UIColor.systemBlue)
+            #elseif os(macOS)
+                Color(NSColor.systemBlue)
+            #endif
+        }()
+
+        public static let systemGreen: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGreen)
+            #elseif os(macOS)
+                Color(NSColor.systemGreen)
+            #endif
+        }()
+
+        public static let systemRed: Color = {
+            #if os(iOS)
+                Color(UIColor.systemRed)
+            #elseif os(macOS)
+                Color(NSColor.systemRed)
+            #endif
+        }()
+
+        public static let systemOrange: Color = {
+            #if os(iOS)
+                Color(UIColor.systemOrange)
+            #elseif os(macOS)
+                Color(NSColor.systemOrange)
+            #endif
+        }()
+
+        public static let systemGray: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGray)
+            #elseif os(macOS)
+                Color(NSColor.systemGray)
+            #endif
+        }()
+
+        public static let systemGray2: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGray2)
+            #elseif os(macOS)
+                Color(NSColor.systemGray)
+            #endif
+        }()
+
+        public static let systemGray3: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGray3)
+            #elseif os(macOS)
+                Color(NSColor.systemGray)
+            #endif
+        }()
+
+        public static let systemGray4: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGray4)
+            #elseif os(macOS)
+                Color(NSColor.systemGray)
+            #endif
+        }()
+
+        public static let systemGray5: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGray5)
+            #elseif os(macOS)
+                Color(NSColor.systemGray)
+            #endif
+        }()
+
+        public static let systemGray6: Color = {
+            #if os(iOS)
+                Color(UIColor.systemGray6)
+            #elseif os(macOS)
+                Color(NSColor.systemGray)
+            #endif
+        }()
     }
 }

@@ -99,7 +99,7 @@ public final class CertificatePickerViewModel: ObservableObject {
     }
 
     /// Tanlangan faylni install qilish
-    public func install() async {
+    public func install(login: String) async {
         guard let file = selectedFile else { return }
         guard !password.isEmpty else { return }
 
@@ -108,16 +108,17 @@ public final class CertificatePickerViewModel: ObservableObject {
         do {
             let cert = try await Muhr.importCertificate(
                 fileURL: file.url,
-                password: password
+                password: password,
+                login: login
             )
 
             state = .success(cert)
             onInstallSuccess?(cert)
 
         } catch MuhrError.invalidCertificatePassword {
-            state = .error("Сертификат пароли нотўғри")
+            state = .error(L10n.errorInvalidPassword)
         } catch MuhrError.invalidCertificateFormat {
-            state = .error("Сертификат формати нотўғри")
+            state = .error(L10n.errorInvalidFormat)
         } catch {
             state = .error(error.localizedDescription)
         }

@@ -174,7 +174,7 @@ public protocol ProviderProtocol: AnyObject, Sendable {
     ///   - password: Parol
     /// - Returns: Import qilingan sertifikat
     /// - Throws: `MuhrError.invalidCertificatePassword`
-    func importCertificate(data: Data, password: String) async throws
+    func importCertificate(data: Data, password: String, login: String) async throws
         -> CertificateInfo
 
     /// Sertifikatni o'chirish

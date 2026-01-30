@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "Muhr",
-
+    defaultLocalization: "uz",
     platforms: [
         .iOS(.v14),
         .macOS(.v12),
@@ -21,7 +21,10 @@ let package = Package(
         .target(
             name: "Muhr",
             dependencies: [],
-            path: "Sources/Muhr"
+            path: "Sources/Muhr",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "MuhrTests",

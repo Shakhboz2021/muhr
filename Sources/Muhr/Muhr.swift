@@ -115,7 +115,8 @@ public enum Muhr {
     /// - Returns: Import qilingan certificate info
     public static func importCertificate(
         fileURL: URL,
-        password: String
+        password: String,
+        login: String
     ) async throws -> CertificateInfo {
         guard let provider = provider else {
             throw MuhrError.providerNotInitialized
@@ -123,21 +124,24 @@ public enum Muhr {
         let data = try Data(contentsOf: fileURL)
         return try await provider.importCertificate(
             data: data,
-            password: password
+            password: password,
+            login: login
         )
     }
 
     /// Certificate import qilish (Data'dan)
     public static func importCertificate(
         data: Data,
-        password: String
+        password: String,
+        login: String
     ) async throws -> CertificateInfo {
         guard let provider = provider else {
             throw MuhrError.providerNotInitialized
         }
         return try await provider.importCertificate(
             data: data,
-            password: password
+            password: password,
+            login: login
         )
     }
 
@@ -165,57 +169,68 @@ public enum Muhr {
     ///   - data: Imzolanadigan ma'lumot
     ///   - password: Certificate password
     /// - Returns: Imzo natijasi
-    public static func sign(data: Data, password: String) async throws
+    public static func sign(data: Data, password: String, login: String)
+        async throws
         -> SignatureResult
     {
         guard let provider = provider else {
             throw MuhrError.providerNotInitialized
         }
-        return try await provider.sign(data: data, password: password)
+        return
+            try await provider
+            .sign(data: data, password: password, login: login)
     }
 
     /// String imzolash
     public static func sign(
         string: String,
         encoding: String.Encoding = .utf8,
-        password: String
+        password: String,
+        login: String
     ) async throws -> SignatureResult {
         guard let data = string.data(using: encoding) else {
             throw MuhrError.signingFailed(reason: "String encoding failed")
         }
-        return try await sign(data: data, password: password)
+        return try await sign(data: data, password: password, login: login)
     }
 
     /// JSON imzolash
     public static func sign(
         json: [String: Any],
-        password: String
+        password: String,
+        login: String
     ) async throws -> SignatureResult {
         let data = try JSONSerialization.data(
             withJSONObject: json,
             options: [.sortedKeys]
         )
-        return try await sign(data: data, password: password)
+        return try await sign(data: data, password: password, login: login)
     }
 
     /// Encodable ob'ekt imzolash
     public static func sign<T: Encodable>(
         object: T,
-        password: String
+        password: String,
+        login: String
     ) async throws -> SignatureResult {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(object)
-        return try await sign(data: data, password: password)
+        return try await sign(data: data, password: password, login: login)
     }
 
     /// Fayl imzolash
     public static func sign(
         fileURL: URL,
-        password: String
+        password: String,
+        login: String
     ) async throws -> SignatureResult {
         let data = try Data(contentsOf: fileURL)
-        return try await sign(data: data, password: password)
+        return try await sign(
+            data: data,
+            password: password,
+            login: login
+        )
     }
 
     // MARK: - Verification
@@ -281,14 +296,14 @@ public enum Muhr {
     }
 }
 
-    // MARK: - UI Components
+// MARK: - UI Components
 
 #if os(iOS)
-import UIKit
+    import UIKit
 
-@available(iOS 13.0, *)
-public extension Muhr {
-    
+    @available(iOS 13.0, *)
+    extension Muhr {
+
         /// UIKit: Certificate picker controller
         ///
         /// ## Misol:
@@ -304,18 +319,20 @@ public extension Muhr {
         /// let nav = UINavigationController(rootViewController: picker)
         /// present(nav, animated: true)
         /// ```
-    static func makeCertificatePickerViewController() -> CertificatePickerViewController {
-        return CertificatePickerViewController()
+        public static func makeCertificatePickerViewController()
+            -> CertificatePickerViewController
+        {
+            return CertificatePickerViewController()
+        }
     }
-}
 #endif
 
 #if canImport(SwiftUI)
-import SwiftUI
+    import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
-public extension Muhr {
-    
+    @available(iOS 14.0, macOS 11.0, *)
+    extension Muhr {
+
         /// SwiftUI: Certificate picker view
         ///
         /// ## Misol:
@@ -332,14 +349,120 @@ public extension Muhr {
         ///     )
         /// }
         /// ```
-    static func certificatePickerView(
-        onInstallSuccess: ((CertificateInfo) -> Void)? = nil,
-        onCancel: (() -> Void)? = nil
-    ) -> CertificatePickerView {
-        return CertificatePickerView(
-            onInstallSuccess: onInstallSuccess,
-            onCancel: onCancel
-        )
+        public static func certificatePickerView(
+            login: Binding<String>,
+            onInstallSuccess: ((CertificateInfo) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> CertificatePickerView {
+            CertificatePickerView(
+                login: login,
+                onInstallSuccess: onInstallSuccess,
+                onCancel: onCancel
+            )
+        }
     }
-}
+#endif
+
+// MARK: - Signing with UI
+
+#if canImport(SwiftUI)
+    import SwiftUI
+
+    @available(iOS 14.0, macOS 11.0, *)
+    extension Muhr {
+
+        /// SwiftUI: Sign data with password UI
+        ///
+        /// ## Misol:
+        /// ```swift
+        /// .sheet(isPresented: $showSigning) {
+        ///     Muhr.signingView(
+        ///         data: paymentData,
+        ///         login: userLogin,
+        ///         onSuccess: { result in
+        ///             print(result.signatureBase64)
+        ///             showSigning = false
+        ///         },
+        ///         onCancel: {
+        ///             showSigning = false
+        ///         }
+        ///     )
+        /// }
+        /// ```
+        public static func signingView(
+            data: Data,
+            login: String,
+            onSuccess: ((SignatureResult) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> SigningPasswordView {
+            return SigningPasswordView(
+                dataToSign: data,
+                login: login,
+                onSuccess: onSuccess,
+                onCancel: onCancel
+            )
+        }
+
+        /// SwiftUI: Sign string with password UI
+        public static func signingView(
+            string: String,
+            encoding: String.Encoding = .utf8,
+            login: String,
+            onSuccess: ((SignatureResult) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> SigningPasswordView? {
+            guard let data = string.data(using: encoding) else {
+                return nil
+            }
+            return signingView(
+                data: data,
+                login: login,
+                onSuccess: onSuccess,
+                onCancel: onCancel
+            )
+        }
+
+        /// SwiftUI: Sign JSON with password UI
+        public static func signingView(
+            json: [String: Any],
+            login: String,
+            onSuccess: ((SignatureResult) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> SigningPasswordView? {
+            guard
+                let data = try? JSONSerialization.data(
+                    withJSONObject: json,
+                    options: [.sortedKeys]
+                )
+            else {
+                return nil
+            }
+            return signingView(
+                data: data,
+                login: login,
+                onSuccess: onSuccess,
+                onCancel: onCancel
+            )
+        }
+
+        /// SwiftUI: Sign Encodable object with password UI
+        public static func signingView<T: Encodable>(
+            object: T,
+            login: String,
+            onSuccess: ((SignatureResult) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> SigningPasswordView? {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+            guard let data = try? encoder.encode(object) else {
+                return nil
+            }
+            return signingView(
+                data: data,
+                login: login,
+                onSuccess: onSuccess,
+                onCancel: onCancel
+            )
+        }
+    }
 #endif

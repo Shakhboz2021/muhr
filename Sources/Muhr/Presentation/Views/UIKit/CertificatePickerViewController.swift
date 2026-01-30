@@ -61,12 +61,12 @@
                 true
 
             let titleLabel = UILabel()
-            titleLabel.text = "Сертификат топилмади"
+            titleLabel.text = L10n.certificateNotFound
             titleLabel.font = .preferredFont(forTextStyle: .headline)
 
             let subtitleLabel = UILabel()
             subtitleLabel.text =
-                "Documents папкасига .p12 ёки .pfx файлни қўшинг"
+                L10n.certificateInstruction
             subtitleLabel.font = .preferredFont(forTextStyle: .subheadline)
             subtitleLabel.textColor = .secondaryLabel
             subtitleLabel.textAlignment = .center
@@ -103,7 +103,7 @@
         private lazy var passwordTextField: UITextField = {
             let textField = UITextField()
             textField.translatesAutoresizingMaskIntoConstraints = false
-            textField.placeholder = "Сертификат пароли"
+            textField.placeholder = L10n.passwordPlaceholder
             textField.isSecureTextEntry = true
             textField.borderStyle = .roundedRect
             textField.addTarget(
@@ -127,7 +127,7 @@
         private lazy var installButton: UIButton = {
             let button = UIButton(type: .system)
             button.translatesAutoresizingMaskIntoConstraints = false
-            button.setTitle("Ўрнатиш", for: .normal)
+            button.setTitle(L10n.installButton, for: .normal)
             button.titleLabel?.font = .preferredFont(forTextStyle: .headline)
             button.backgroundColor = .systemBlue
             button.setTitleColor(.white, for: .normal)
@@ -294,9 +294,9 @@
         }
 
         private func setupNavigationBar() {
-            title = "Сертификат ўрнатиш"
+            title = L10n.certificateTitle
             navigationItem.leftBarButtonItem = UIBarButtonItem(
-                title: "Бекор",
+                title: L10n.cancel,
                 style: .plain,
                 target: self,
                 action: #selector(cancelTapped)
@@ -363,7 +363,7 @@
         }
 
         private func setLoading(_ isLoading: Bool) {
-            installButton.setTitle(isLoading ? "" : "Ўрнатиш", for: .normal)
+            installButton.setTitle(isLoading ? "" : L10n.installButton, for: .normal)
             installButton.isEnabled = !isLoading && viewModel.canInstall
             passwordTextField.isEnabled = !isLoading
 
@@ -386,9 +386,9 @@
             viewModel.cancel()
         }
 
-        @objc private func installTapped() {
+        @objc private func installTapped(login: String) {
             Task {
-                await viewModel.install()
+                await viewModel.install(login: login)
             }
         }
 

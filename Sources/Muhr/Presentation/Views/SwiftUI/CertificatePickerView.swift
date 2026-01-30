@@ -14,6 +14,7 @@ public struct CertificatePickerView: View {
     @Environment(\.presentationMode) var presentationMode
 
     @State private var isPasswordVisible = false
+    @Binding private var login: String
 
     // MARK: - Callbacks
 
@@ -23,9 +24,11 @@ public struct CertificatePickerView: View {
     // MARK: - Init
 
     public init(
+        login: Binding<String>,
         onInstallSuccess: ((CertificateInfo) -> Void)? = nil,
         onCancel: (() -> Void)? = nil
     ) {
+        self._login = login
         self.onInstallSuccess = onInstallSuccess
         self.onCancel = onCancel
     }
@@ -35,12 +38,12 @@ public struct CertificatePickerView: View {
     public var body: some View {
         NavigationView {
             content
-                .navigationTitle("Сертификат")
+                .navigationTitle(L10n.certificateTitle)
                 #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Бекор") {
+                            Button(L10n.cancel) {
                                 handleCancel()
                             }
                         }
@@ -48,7 +51,7 @@ public struct CertificatePickerView: View {
                 #else
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Бекор") {
+                            Button(L10n.cancel) {
                                 handleCancel()
                             }
                         }
@@ -89,11 +92,11 @@ public struct CertificatePickerView: View {
                     .font(.system(size: 56))
                     .foregroundColor(MuhrTheme.Colors.tertiaryLabel)
 
-                Text("Сертификат топилмади")
+                Text(L10n.certificateNotFound)
                     .font(.headline)
                     .foregroundColor(MuhrTheme.Colors.label)
 
-                Text("Documents папкасига\n.p12 ёки .pfx файлни қўшинг")
+                Text(L10n.certificateInstruction)
                     .font(.subheadline)
                     .foregroundColor(MuhrTheme.Colors.secondaryLabel)
                     .multilineTextAlignment(.center)
@@ -112,7 +115,7 @@ public struct CertificatePickerView: View {
                 // Scrollable list
                 Spacer()
                 List {
-                    Section(header: Text("Сертификатни танланг")) {
+                    Section(header: Text(L10n.selectCertificateTitle)) {
                         ForEach(viewModel.files) { file in
                             CertificateFileRow(
                                 file: file,
@@ -125,7 +128,11 @@ public struct CertificatePickerView: View {
                         }
                     }
                 }
-                .listStyle(InsetGroupedListStyle())
+                #if os(iOS)
+                    .listStyle(InsetGroupedListStyle())
+                #elseif os(macOS)
+                    .listStyle(SidebarListStyle())
+                #endif
 
                 // Fixed bottom section
                 bottomSection
@@ -139,17 +146,17 @@ public struct CertificatePickerView: View {
         VStack(spacing: 16) {
             // Password field
             VStack(alignment: .leading, spacing: 6) {
-                Text("ПАРОЛ")
+                Text(L10n.passwordLabel)
                     .font(.caption)
                     .foregroundColor(MuhrTheme.Colors.secondaryLabel)
 
                 HStack {
                     if isPasswordVisible {
                         TextField(
-                            "Паролни киритинг",
+                            L10n.passwordPlaceholder,
                             text: $viewModel.password,
                             onCommit: {
-                                install()
+                                install(login: $login)
                             }
                         )
                         #if os(iOS)
@@ -158,10 +165,10 @@ public struct CertificatePickerView: View {
                         #endif
                     } else {
                         SecureField(
-                            "Паролни киритинг",
+                            L10n.passwordPlaceholder,
                             text: $viewModel.password,
                             onCommit: {
-                                install()
+                                install(login: $login)
                             }
                         )
                     }
@@ -189,11 +196,11 @@ public struct CertificatePickerView: View {
 
             // Install button
             MuhrButton(
-                title: "Ўрнатиш",
+                title: L10n.installButton,
                 isLoading: viewModel.isLoading,
                 isEnabled: viewModel.canInstall
             ) {
-                install()
+                install(login: $login)
             }
         }
         .padding(16)
@@ -210,10 +217,10 @@ public struct CertificatePickerView: View {
 
     // MARK: - Actions
 
-    private func install() {
+    private func install(login: Binding<String>) {
         guard viewModel.canInstall else { return }
         Task {
-            await viewModel.install()
+            await viewModel.install(login: login.wrappedValue)
         }
     }
 
@@ -222,13 +229,3 @@ public struct CertificatePickerView: View {
         presentationMode.wrappedValue.dismiss()
     }
 }
-
-// MARK: - Preview
-#if DEBUG
-    @available(iOS 14.0, macOS 11.0, *)
-    struct CertificatePickerView_Previews: PreviewProvider {
-        static var previews: some View {
-            CertificatePickerView()
-        }
-    }
-#endif

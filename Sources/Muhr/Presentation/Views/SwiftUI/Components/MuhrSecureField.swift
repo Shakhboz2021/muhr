@@ -87,14 +87,14 @@ public struct MuhrSecureField: View {
 
                 VStack(spacing: 20) {
                     MuhrSecureField(
-                        title: "Пароль",
-                        placeholder: "Паролни киритинг",
+                        title: L10n.passwordLabel,
+                        placeholder: L10n.passwordPlaceholder,
                         text: .constant("")
                     )
 
                     MuhrSecureField(
                         title: "",
-                        placeholder: "Паролни киритинг",
+                        placeholder: L10n.passwordPlaceholder,
                         text: .constant("secret123")
                     )
                 }

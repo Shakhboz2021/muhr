@@ -25,7 +25,10 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
 
     // MARK: - Constants
 
-    private let serviceName = "com.muhr.styx"
+    private var serviceName: String {
+        let bundleID = Bundle.main.bundleIdentifier ?? "uz.muhr"
+        return bundleID + ".styx"
+    }
     private let maxFailedAttempts = 3
 
     // MARK: - Properties
@@ -117,7 +120,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     ///   - data: .p12 fayl content
     ///   - password: Certificate password
     /// - Returns: Import qilingan certificate info
-    public func importCertificate(data: Data, password: String) async throws
+    public func importCertificate(data: Data, password: String, login: String) async throws
         -> CertificateInfo
     {
 
@@ -128,7 +131,11 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         let certInfo = try parseCertificateInfo(from: identity)
 
         // 3. Keychain'ga saqlash
-        try saveToKeychain(p12Data: data, password: password)
+        try saveToKeychain(
+            p12Data: data,
+            certificatePassword: password,
+            login: login
+        )
 
         // 4. Available certificates yangilash
         await MainActor.run {
@@ -165,12 +172,12 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     ///   - data: Imzolanadigan ma'lumot
     ///   - password: Certificate password
     /// - Returns: Imzo natijasi
-    public func sign(data: Data, password: String) async throws
+    public func sign(data: Data, password: String, login: String? = "") async throws
         -> SignatureResult
     {
 
         // 1. Keychain'dan .p12 olish
-        let p12Data = try getFromKeychain(password: password)
+        let p12Data = try getFromKeychain(key: (login ?? "") + password)
 
         // 2. .p12 ni ochish
         let identity = try openPKCS12(data: p12Data, password: password)
@@ -235,9 +242,9 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     ///
     /// - Parameter password: Tekshiriladigan password
     /// - Returns: true = to'g'ri, false = xato
-    public func verifyPassword(_ password: String) async throws -> Bool {
+    public func verifyPassword(_ key: String) async throws -> Bool {
         do {
-            let _ = try getFromKeychain(password: password)
+            let _ = try getFromKeychain(key: key)
             failedAttempts = 0
             return true
         } catch MuhrError.invalidCertificatePassword {
@@ -338,9 +345,9 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     // MARK: - Private: Keychain Operations
 
     /// .p12 ni Keychain'ga saqlash
-    private func saveToKeychain(p12Data: Data, password: String) throws {
+    private func saveToKeychain(p12Data: Data, certificatePassword: String, login: String) throws {
 
-        let hashedPassword = hashPassword(password)
+        let hashedKey = hashKey(key: login+certificatePassword)
 
         // Avval eskisini o'chirish (agar bor bo'lsa)
         let deleteQuery: [String: Any] = [
@@ -353,7 +360,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: hashedPassword,
+            kSecAttrAccount as String: hashedKey,
             kSecValueData as String: p12Data,
             kSecAttrAccessible as String:
                 kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
@@ -367,14 +374,14 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     }
 
     /// Keychain'dan .p12 olish (password bilan)
-    private func getFromKeychain(password: String) throws -> Data {
+    private func getFromKeychain(key: String) throws -> Data {
 
-        let hashedPassword = hashPassword(password)
+        let hashedKey = hashKey(key: key)
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
-            kSecAttrAccount as String: hashedPassword,
+            kSecAttrAccount as String: hashedKey,
             kSecReturnData as String: true,
         ]
 
@@ -398,8 +405,8 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     }
 
     /// Password hash qilish
-    private func hashPassword(_ password: String) -> String {
-        let data = Data(password.utf8)
+    private func hashKey(key: String) -> String {
+        let data = Data(key.utf8)
         let hash = SHA256.hash(data: data)
         return hash.compactMap { String(format: "%02x", $0) }.joined()
     }

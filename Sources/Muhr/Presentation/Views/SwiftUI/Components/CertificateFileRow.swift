@@ -66,30 +66,3 @@ public struct CertificateFileRow: View {
         .buttonStyle(.plain)
     }
 }
-
-// MARK: - Preview
-#if DEBUG
-    @available(iOS 14.0, macOS 11.0, *)
-    struct CertificateFileRow_Previews: PreviewProvider {
-        static var previews: some View {
-            List {
-                CertificateFileRow(
-                    file: CertificateFile(
-                        url: URL(fileURLWithPath: "/test/muhammad.p12")
-                    ),
-                    isSelected: false,
-                    onTap: {}
-                )
-
-                CertificateFileRow(
-                    file: CertificateFile(
-                        url: URL(fileURLWithPath: "/test/company.pfx")
-                    ),
-                    isSelected: true,
-                    onTap: {}
-                )
-            }
-            .listStyle(.insetGrouped)
-        }
-    }
-#endif
