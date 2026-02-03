@@ -13,6 +13,10 @@ public struct SigningPasswordView: View {
     @StateObject private var viewModel: SigningPasswordViewModel
     @Environment(\.presentationMode) var presentationMode
 
+    @State private var showCertificatePicker = false
+    @State private var hasCertificate = false
+    @State private var isCheckingCertificate = true
+
     // MARK: - Callbacks
 
     private let onSuccess: ((SignatureResult) -> Void)?
@@ -39,6 +43,102 @@ public struct SigningPasswordView: View {
     // MARK: - Body
 
     public var body: some View {
+        Group {
+            if isCheckingCertificate {
+                loadingView
+            } else if hasCertificate {
+                signingContent
+            } else {
+                noCertificateView
+            }
+        }
+        .onAppear {
+            setupCallbacks()
+            checkCertificate()
+        }
+        .sheet(isPresented: $showCertificatePicker) {
+            CertificatePickerView(
+                login: viewModel.login,
+                onInstallSuccess: { cert in
+                    showCertificatePicker = false
+                    hasCertificate = true
+                },
+                onCancel: {
+                    showCertificatePicker = false
+                }
+            )
+        }
+    }
+
+    // MARK: - Loading
+
+    private var loadingView: some View {
+        ZStack {
+            MuhrTheme.Colors.systemGroupedBackground
+                .ignoresSafeArea()
+
+            ProgressView()
+        }
+    }
+
+    // MARK: - No Certificate View
+
+    private var noCertificateView: some View {
+        ZStack {
+            MuhrTheme.Colors.systemGroupedBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                // Icon
+                Image(systemName: "doc.badge.plus")
+                    .font(.system(size: 56))
+                    .foregroundColor(MuhrTheme.Colors.tertiaryLabel)
+
+                // Title
+                Text(L10n.certificateNotFound)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(MuhrTheme.Colors.label)
+
+                // Description
+                Text(L10n.certificateRequiredForSigning)
+                    .font(.subheadline)
+                    .foregroundColor(MuhrTheme.Colors.secondaryLabel)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+
+                Spacer()
+
+                // Buttons
+                VStack(spacing: 12) {
+                    MuhrButton(
+                        title: L10n.installCertificateButton,
+                        isLoading: false,
+                        isEnabled: true
+                    ) {
+                        showCertificatePicker = true
+                    }
+
+                    Button(action: {
+                        onCancel?()
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Text(L10n.cancel)
+                            .font(.body)
+                            .foregroundColor(MuhrTheme.Colors.systemBlue)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(24)
+            }
+        }
+    }
+
+    // MARK: - Signing Content
+
+    private var signingContent: some View {
         ZStack {
             MuhrTheme.Colors.systemGroupedBackground
                 .ignoresSafeArea()
@@ -55,34 +155,21 @@ public struct SigningPasswordView: View {
                 formSection
             }
         }
-        .onAppear {
-            viewModel.onSuccess = { result in
-                onSuccess?(result)
-                presentationMode.wrappedValue.dismiss()
-            }
-            viewModel.onCancel = {
-                onCancel?()
-                presentationMode.wrappedValue.dismiss()
-            }
-        }
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
         VStack(spacing: 16) {
-            // Icon
             Image(systemName: "signature")
                 .font(.system(size: 48, weight: .light))
                 .foregroundColor(MuhrTheme.Colors.systemBlue)
 
-            // Title
             Text(L10n.signingTitle)
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundColor(MuhrTheme.Colors.label)
 
-            // Description
             Text(L10n.signingDescription)
                 .font(.subheadline)
                 .foregroundColor(MuhrTheme.Colors.secondaryLabel)
@@ -95,7 +182,6 @@ public struct SigningPasswordView: View {
 
     private var formSection: some View {
         VStack(spacing: 16) {
-            // Password field
             MuhrSecureField(
                 title: L10n.passwordLabel,
                 placeholder: L10n.passwordPlaceholder,
@@ -103,7 +189,6 @@ public struct SigningPasswordView: View {
                 isEnabled: !viewModel.isSigning
             )
 
-            // Error message
             if let error = viewModel.errorMessage {
                 HStack {
                     Image(systemName: "exclamationmark.circle.fill")
@@ -117,7 +202,6 @@ public struct SigningPasswordView: View {
                 }
             }
 
-            // Sign button
             MuhrButton(
                 title: L10n.signButton,
                 isLoading: viewModel.isSigning,
@@ -128,7 +212,6 @@ public struct SigningPasswordView: View {
                 }
             }
 
-            // Cancel button
             Button(action: {
                 viewModel.cancel()
             }) {
@@ -146,6 +229,33 @@ public struct SigningPasswordView: View {
                 .fill(MuhrTheme.Colors.systemBackground)
         )
         .padding(16)
+    }
+
+    // MARK: - Setup
+
+    private func setupCallbacks() {
+        viewModel.onSuccess = { result in
+            onSuccess?(result)
+            presentationMode.wrappedValue.dismiss()
+        }
+        viewModel.onCancel = {
+            onCancel?()
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
+
+    // MARK: - Check Certificate
+
+    private func checkCertificate() {
+        Task {
+            let provider = StyxProvider()
+            try? await provider.initialize()
+
+            await MainActor.run {
+                hasCertificate = provider.hasCertificate()
+                isCheckingCertificate = false
+            }
+        }
     }
 }
 

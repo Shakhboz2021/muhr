@@ -150,4 +150,14 @@ public enum L10n {
     public static var errorMaxAttemptsExceeded: String {
         localized("error.maxAttemptsExceeded")
     }
+
+    /// "Imzolash uchun sertifikat o'rnatish kerak"
+    public static var certificateRequiredForSigning: String {
+        localized("certificate.requiredForSigning")
+    }
+
+    /// "Sertifikat o'rnatish"
+    public static var installCertificateButton: String {
+        localized("certificate.install.button")
+    }
 }

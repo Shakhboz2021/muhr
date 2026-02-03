@@ -14,7 +14,7 @@ public struct CertificatePickerView: View {
     @Environment(\.presentationMode) var presentationMode
 
     @State private var isPasswordVisible = false
-    @Binding private var login: String
+    private var login: String
 
     // MARK: - Callbacks
 
@@ -24,11 +24,11 @@ public struct CertificatePickerView: View {
     // MARK: - Init
 
     public init(
-        login: Binding<String>,
+        login: String,
         onInstallSuccess: ((CertificateInfo) -> Void)? = nil,
         onCancel: (() -> Void)? = nil
     ) {
-        self._login = login
+        self.login = login
         self.onInstallSuccess = onInstallSuccess
         self.onCancel = onCancel
     }
@@ -156,7 +156,7 @@ public struct CertificatePickerView: View {
                             L10n.passwordPlaceholder,
                             text: $viewModel.password,
                             onCommit: {
-                                install(login: $login)
+                                install(login: login)
                             }
                         )
                         #if os(iOS)
@@ -168,7 +168,7 @@ public struct CertificatePickerView: View {
                             L10n.passwordPlaceholder,
                             text: $viewModel.password,
                             onCommit: {
-                                install(login: $login)
+                                install(login: login)
                             }
                         )
                     }
@@ -200,7 +200,7 @@ public struct CertificatePickerView: View {
                 isLoading: viewModel.isLoading,
                 isEnabled: viewModel.canInstall
             ) {
-                install(login: $login)
+                install(login: login)
             }
         }
         .padding(16)
@@ -217,10 +217,10 @@ public struct CertificatePickerView: View {
 
     // MARK: - Actions
 
-    private func install(login: Binding<String>) {
+    private func install(login: String) {
         guard viewModel.canInstall else { return }
         Task {
-            await viewModel.install(login: login.wrappedValue)
+            await viewModel.install(login: login)
         }
     }
 

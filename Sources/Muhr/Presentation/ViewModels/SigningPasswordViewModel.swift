@@ -30,7 +30,7 @@ public final class SigningPasswordViewModel: ObservableObject {
     // MARK: - Private
 
     private let dataToSign: Data
-    private let login: String
+    let login: String
     private var signatureResult: SignatureResult?
 
     // MARK: - Computed

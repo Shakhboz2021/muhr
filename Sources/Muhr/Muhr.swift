@@ -350,7 +350,7 @@ public enum Muhr {
         /// }
         /// ```
         public static func certificatePickerView(
-            login: Binding<String>,
+            login: String,
             onInstallSuccess: ((CertificateInfo) -> Void)? = nil,
             onCancel: (() -> Void)? = nil
         ) -> CertificatePickerView {

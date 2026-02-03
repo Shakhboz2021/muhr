@@ -469,7 +469,24 @@
             "en" : { "stringUnit" : { "state" : "translated", "value" : "Max attempts exceeded. Certificate deleted." } },
             "ru" : { "stringUnit" : { "state" : "translated", "value" : "Попытки исчерпаны. Сертификат удалён." } }
         }
+    },
+    "certificate.requiredForSigning" : {
+        "extractionState" : "manual",
+        "localizations" : {
+            "uz" : { "stringUnit" : { "state" : "translated", "value" : "Imzolash uchun sertifikat o'rnatish kerak" } },
+            "en" : { "stringUnit" : { "state" : "translated", "value" : "Certificate required for signing" } },
+            "ru" : { "stringUnit" : { "state" : "translated", "value" : "Для подписания требуется сертификат" } }
+        }
+    },
+    "certificate.install.button" : {
+        "extractionState" : "manual",
+        "localizations" : {
+            "uz" : { "stringUnit" : { "state" : "translated", "value" : "Sertifikat o'rnatish" } },
+            "en" : { "stringUnit" : { "state" : "translated", "value" : "Install Certificate" } },
+            "ru" : { "stringUnit" : { "state" : "translated", "value" : "Установить сертификат" } }
+        }
     }
   },
   "version" : "1.0"
 }
+
