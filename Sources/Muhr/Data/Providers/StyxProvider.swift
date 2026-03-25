@@ -5,6 +5,7 @@
 //  Created by Muhammad on 27/01/26.
 //
 
+import CommonCrypto
 import CryptoKit
 import Foundation
 import Security
@@ -602,6 +603,270 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         }
 
         return (.ecdsaP256, 256)
+    }
+
+    // MARK: - CMS/PKCS#7 Signing
+
+    // CMS OID konstantalari
+    private static let oidSHA1 = "1.3.14.3.2.26"
+    private static let oidRSAEncryption = "1.2.840.113549.1.1.1"
+    private static let oidPKCS7Data = "1.2.840.113549.1.7.1"
+    private static let oidPKCS7SignedData = "1.2.840.113549.1.7.2"
+    private static let oidContentType = "1.2.840.113549.1.9.3"
+    private static let oidMessageDigest = "1.2.840.113549.1.9.4"
+    private static let oidSigningTime = "1.2.840.113549.1.9.5"
+    private static let oidCMSAlgorithmProtection = "1.2.840.113549.1.9.52"
+
+    /// PKCS#7/CMS formatida to'liq signed message yaratish
+    ///
+    /// Android ishlagan formatga mos:
+    /// - Digest: SHA-1
+    /// - Signature algorithm: rsaEncryption (1.2.840.113549.1.1.1)
+    /// - SignedAttrs: contentType, signingTime, messageDigest, CMSAlgorithmProtection
+    ///
+    /// - Parameters:
+    ///   - data: Imzolanadigan ma'lumot
+    ///   - password: Certificate password
+    ///   - login: Foydalanuvchi login
+    /// - Returns: CMS/PKCS#7 signed message (DER format, Base64 ga tayyor)
+    public func signCMS(data: Data, password: String, login: String? = "") async throws -> Data {
+        // 1. Keychain'dan .p12 olish
+        let p12Data = try getFromKeychain(key: (login ?? "") + password)
+
+        // 2. .p12 ni ochish
+        let identity = try openPKCS12(data: p12Data, password: password)
+
+        // 3. Private key olish
+        var privateKey: SecKey?
+        let keyStatus = SecIdentityCopyPrivateKey(identity, &privateKey)
+        guard keyStatus == errSecSuccess, let key = privateKey else {
+            throw MuhrError.privateKeyNotFound
+        }
+
+        // 4. Certificate olish
+        var certificate: SecCertificate?
+        let certStatus = SecIdentityCopyCertificate(identity, &certificate)
+        guard certStatus == errSecSuccess, let cert = certificate else {
+            throw MuhrError.invalidCertificateFormat
+        }
+
+        // 5. Certificate DER data olish
+        let certDER = SecCertificateCopyData(cert) as Data
+
+        // 6. Content SHA-1 hash hisoblash (Android kabi)
+        let contentDigest = computeSHA1(data)
+
+        // 7. SignedAttrs yaratish (Android formatiga mos: 4 ta attribute)
+        let signedAttrs = buildSignedAttrs(contentDigest: contentDigest)
+
+        // 8. SignedAttrs ni SET OF sifatida DER encode (imzolash uchun)
+        // RFC 5652: imzo signedAttrs ning DER-encoded SET OF ustida yaratiladi
+        let signedAttrsDER = DERBuilder.set(signedAttrs)
+
+        // 9. Imzoni signedAttrs ustida yaratish
+        // Android: rsaSignatureMessagePKCS1v15SHA1 ishlatiladi
+        let signature = try signDataSHA1(signedAttrsDER, privateKey: key)
+
+        // 10. CMS/PKCS#7 SignedData strukturasini yaratish
+        let cmsData = try buildCMSSignedData(
+            content: data,
+            signature: signature,
+            certificateDER: certDER,
+            signedAttrs: signedAttrs
+        )
+
+        // 11. Reset failed attempts
+        failedAttempts = 0
+
+        #if DEBUG
+        print("✅ CMS signed message created: \(cmsData.count) bytes")
+        #endif
+
+        return cmsData
+    }
+
+    /// SHA-1 hash hisoblash (Android kabi)
+    private func computeSHA1(_ data: Data) -> Data {
+        var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
+        data.withUnsafeBytes {
+            _ = CC_SHA1($0.baseAddress, CC_LONG(data.count), &digest)
+        }
+        return Data(digest)
+    }
+
+    /// SHA-1 bilan RSA PKCS#1 v1.5 imzolash
+    private func signDataSHA1(_ data: Data, privateKey: SecKey) throws -> Data {
+        let algorithm: SecKeyAlgorithm = .rsaSignatureMessagePKCS1v15SHA1
+
+        guard SecKeyIsAlgorithmSupported(privateKey, .sign, algorithm) else {
+            throw MuhrError.unsupportedAlgorithm(algorithm: "rsaSignatureMessagePKCS1v15SHA1")
+        }
+
+        var error: Unmanaged<CFError>?
+        guard let signature = SecKeyCreateSignature(
+            privateKey,
+            algorithm,
+            data as CFData,
+            &error
+        ) as Data? else {
+            let msg = error?.takeRetainedValue().localizedDescription ?? "Unknown"
+            throw MuhrError.signingFailed(reason: msg)
+        }
+
+        return signature
+    }
+
+    // MARK: - Private: CMS/PKCS#7 Builder
+
+    /// RFC 5652 SignedData strukturasini DER formatida yaratish
+    ///
+    /// Android ishlagan formatga mos:
+    /// - digestAlgorithm: SHA-1
+    /// - signatureAlgorithm: rsaEncryption
+    /// - signedAttrs: 4 ta attribute
+    private func buildCMSSignedData(
+        content: Data,
+        signature: Data,
+        certificateDER: Data,
+        signedAttrs: [Data]
+    ) throws -> Data {
+
+        // DigestAlgorithmIdentifier: SHA-1
+        let digestAlgId = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidSHA1),
+            DERBuilder.null()
+        ])
+
+        // EncapsulatedContentInfo
+        let eContent = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidPKCS7Data),  // id-data
+            DERBuilder.explicit(tag: 0, content: DERBuilder.octetString(content))
+        ])
+
+        // SignerInfo
+        let signerInfo = try buildSignerInfo(
+            certificateDER: certificateDER,
+            signature: signature,
+            signedAttrs: signedAttrs
+        )
+
+        // SignedData
+        let signedData = DERBuilder.sequence([
+            DERBuilder.integer(1),                                  // version
+            DERBuilder.set([digestAlgId]),                          // digestAlgorithms
+            eContent,                                               // encapContentInfo
+            DERBuilder.implicit(tag: 0, content: certificateDER),   // certificates [0]
+            DERBuilder.set([signerInfo])                            // signerInfos
+        ])
+
+        // ContentInfo wrapper
+        return DERBuilder.sequence([
+            DERBuilder.oid(Self.oidPKCS7SignedData),  // id-signedData
+            DERBuilder.explicit(tag: 0, content: signedData)
+        ])
+    }
+
+    /// SignedAttributes yaratish (Android formatiga mos — 4 ta attribute)
+    ///
+    /// 1. content-type (1.2.840.113549.1.9.3) = id-data
+    /// 2. signing-time (1.2.840.113549.1.9.5) = UTCTime
+    /// 3. message-digest (1.2.840.113549.1.9.4) = SHA-1(content)
+    /// 4. CMSAlgorithmProtection (1.2.840.113549.1.9.52) = sha1 + rsaEncryption
+    private func buildSignedAttrs(contentDigest: Data) -> [Data] {
+        // 1. content-type attribute
+        let contentTypeAttr = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidContentType),
+            DERBuilder.set([
+                DERBuilder.oid(Self.oidPKCS7Data)  // id-data
+            ])
+        ])
+
+        // 2. signing-time attribute
+        let signingTimeAttr = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidSigningTime),
+            DERBuilder.set([
+                DERBuilder.utcTime(Date())
+            ])
+        ])
+
+        // 3. message-digest attribute (SHA-1 digest — 20 bytes)
+        let messageDigestAttr = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidMessageDigest),
+            DERBuilder.set([
+                DERBuilder.octetString(contentDigest)
+            ])
+        ])
+
+        // 4. CMSAlgorithmProtection attribute (RFC 6211)
+        // SEQUENCE {
+        //   SEQUENCE { OID sha1, NULL }          -- digestAlgorithm
+        //   [1] SEQUENCE { OID rsaEncryption, NULL }  -- signatureAlgorithm
+        // }
+        let cmsAlgProtectionValue = DERBuilder.sequence([
+            DERBuilder.sequence([
+                DERBuilder.oid(Self.oidSHA1),
+                DERBuilder.null()
+            ]),
+            DERBuilder.implicit(tag: 1, content:
+                DERBuilder.sequence([
+                    DERBuilder.oid(Self.oidRSAEncryption),
+                    DERBuilder.null()
+                ])
+            )
+        ])
+
+        let cmsAlgProtectionAttr = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidCMSAlgorithmProtection),
+            DERBuilder.set([cmsAlgProtectionValue])
+        ])
+
+        return [contentTypeAttr, signingTimeAttr, messageDigestAttr, cmsAlgProtectionAttr]
+    }
+
+    /// SignerInfo strukturasini yaratish (RFC 5652 Section 5.3)
+    ///
+    /// Android formatiga mos:
+    /// - digestAlgorithm: SHA-1
+    /// - signatureAlgorithm: rsaEncryption (NOT sha256WithRSAEncryption)
+    private func buildSignerInfo(
+        certificateDER: Data,
+        signature: Data,
+        signedAttrs: [Data]
+    ) throws -> Data {
+        // Certificate'dan issuer va serial number olish
+        var parser = DERParser(data: certificateDER)
+        let (issuerDER, serialNumberDER) = try parser.extractIssuerAndSerial()
+
+        // IssuerAndSerialNumber
+        let signerIdentifier = DERBuilder.sequence([
+            DERBuilder.raw(issuerDER),
+            DERBuilder.raw(serialNumberDER)
+        ])
+
+        // DigestAlgorithmIdentifier: SHA-1
+        let digestAlgId = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidSHA1),
+            DERBuilder.null()
+        ])
+
+        // SignedAttributes — [0] IMPLICIT tag bilan
+        let signedAttrsContent = signedAttrs.reduce(Data()) { $0 + $1 }
+        let signedAttrsImplicit = DERBuilder.implicit(tag: 0, content: signedAttrsContent)
+
+        // SignatureAlgorithmIdentifier: rsaEncryption (Android kabi)
+        let sigAlgId = DERBuilder.sequence([
+            DERBuilder.oid(Self.oidRSAEncryption),
+            DERBuilder.null()
+        ])
+
+        return DERBuilder.sequence([
+            DERBuilder.integer(1),            // version
+            signerIdentifier,                 // sid
+            digestAlgId,                      // digestAlgorithm: SHA-1
+            signedAttrsImplicit,              // signedAttrs [0]
+            sigAlgId,                         // signatureAlgorithm: rsaEncryption
+            DERBuilder.octetString(signature) // signature
+        ])
     }
 
     // MARK: - Private: Delegate

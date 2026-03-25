@@ -233,6 +233,79 @@ public enum Muhr {
         )
     }
 
+    // MARK: - CMS/PKCS#7 Signing
+
+    /// CMS/PKCS#7 formatida imzolash
+    ///
+    /// Server kutgan to'liq CMS SignedData strukturasini qaytaradi:
+    /// ContentInfo → SignedData → (data + signature + certificate)
+    ///
+    /// - Parameters:
+    ///   - data: Imzolanadigan ma'lumot
+    ///   - password: Certificate password
+    ///   - login: Foydalanuvchi login
+    /// - Returns: DER-encoded CMS SignedData
+    public static func signCMS(data: Data, password: String, login: String)
+        async throws -> Data
+    {
+        guard let provider = provider else {
+            throw MuhrError.providerNotInitialized
+        }
+        return try await provider.signCMS(
+            data: data,
+            password: password,
+            login: login
+        )
+    }
+
+    /// Encodable ob'ektni CMS formatida imzolash
+    public static func signCMS<T: Encodable>(
+        object: T,
+        password: String,
+        login: String
+    ) async throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        let data = try encoder.encode(object)
+        return try await signCMS(data: data, password: password, login: login)
+    }
+
+    /// String ni CMS formatida imzolash
+    public static func signCMS(
+        string: String,
+        encoding: String.Encoding = .utf8,
+        password: String,
+        login: String
+    ) async throws -> Data {
+        guard let data = string.data(using: encoding) else {
+            throw MuhrError.signingFailed(reason: "String encoding failed")
+        }
+        return try await signCMS(data: data, password: password, login: login)
+    }
+
+    /// JSON ni CMS formatida imzolash
+    public static func signCMS(
+        json: [String: Any],
+        password: String,
+        login: String
+    ) async throws -> Data {
+        let data = try JSONSerialization.data(
+            withJSONObject: json,
+            options: [.sortedKeys]
+        )
+        return try await signCMS(data: data, password: password, login: login)
+    }
+
+    /// Faylni CMS formatida imzolash
+    public static func signCMS(
+        fileURL: URL,
+        password: String,
+        login: String
+    ) async throws -> Data {
+        let data = try Data(contentsOf: fileURL)
+        return try await signCMS(data: data, password: password, login: login)
+    }
+
     // MARK: - Verification
 
     /// Imzoni tekshirish
