@@ -537,5 +537,35 @@ public enum Muhr {
                 onCancel: onCancel
             )
         }
+
+        // MARK: - Container Password View
+
+        /// Container parolni so'rash va tekshirish uchun view
+        ///
+        /// Faqat parolni verify qiladi va muvaffaqiyatli bo'lganda parolni qaytaradi.
+        /// Sign qilish chaqiruvchi tomonida `Muhr.signCMS(password:)` orqali amalga oshiriladi.
+        ///
+        /// ```swift
+        /// .sheet(isPresented: $showContainer) {
+        ///     Muhr.containerPasswordView(
+        ///         login: login,
+        ///         onSuccess: { password in
+        ///             // password ni signCMS ga uzatish
+        ///         },
+        ///         onCancel: { }
+        ///     )
+        /// }
+        /// ```
+        public static func containerPasswordView(
+            login: String,
+            onSuccess: ((String) -> Void)? = nil,
+            onCancel: (() -> Void)? = nil
+        ) -> ContainerPasswordView {
+            return ContainerPasswordView(
+                login: login,
+                onSuccess: onSuccess,
+                onCancel: onCancel
+            )
+        }
     }
 #endif
