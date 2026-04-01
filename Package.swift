@@ -14,8 +14,6 @@ import PackageDescription
 //       checksum: "<sha256 checksum>"
 //   )
 //
-// yoki SPM git dependency bo'lsa:
-//   .package(url: "https://github.com/your-org/MetinSDK.git", from: "1.1.5")
 
 let package = Package(
     name: "Muhr",
@@ -26,15 +24,9 @@ let package = Package(
     ],
 
     products: [
-        // Muhr core — Styx (lokal sertifikat), asosiy kriptografiya (iOS + macOS)
         .library(
             name: "Muhr",
             targets: ["Muhr"]
-        ),
-        // MuhrMetin — Metin ERI/ЭЦП integratsiyasi (iOS only)
-        .library(
-            name: "MuhrMetin",
-            targets: ["MuhrMetin"]
         ),
     ],
 
@@ -45,29 +37,21 @@ let package = Package(
             path: "Frameworks/MetinSDK.xcframework"
         ),
 
-        // MARK: - Muhr core (iOS + macOS)
+        // MARK: - Muhr (iOS + macOS)
+        // MetinSDK faqat iOS da mavjud — Sources/Muhr/Data/Providers/MetinProvider.swift
+        // ichida `#if canImport(MetinSDK)` guard ishlatiladi, macOS da ignore qilinadi.
         .target(
             name: "Muhr",
-            dependencies: [],
-            path: "Sources/Muhr",
-            resources: [
-                .process("Resources")
-            ]
-        ),
-
-        // MARK: - MuhrMetin (iOS only)
-        // MetinSDK faqat iOS da mavjud.
-        // MetinProvider.swift ichida `#if canImport(MetinSDK)` guard ishlatiladi.
-        .target(
-            name: "MuhrMetin",
             dependencies: [
-                "Muhr",
                 .target(
                     name: "MetinSDK",
                     condition: .when(platforms: [.iOS])
                 ),
             ],
-            path: "Sources/MuhrMetin"
+            path: "Sources/Muhr",
+            resources: [
+                .process("Resources")
+            ]
         ),
 
         // MARK: - Tests
