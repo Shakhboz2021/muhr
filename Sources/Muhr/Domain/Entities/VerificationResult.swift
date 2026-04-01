@@ -233,15 +233,14 @@ public enum VerificationError: Error, Sendable, Equatable {
     case unknown(String)
 
     /// Xato tavsifi
-    @available(iOS 15.0, *)
     public var localizedDescription: String {
         switch self {
         case .invalidSignature:
             return "Imzo matematik jihatdan noto'g'ri"
         case .certificateExpired(let date):
-            return "Sertifikat muddati tugagan: \(date.formatted())"
+            return "Sertifikat muddati tugagan: \(Self.formatDate(date))"
         case .certificateNotYetValid(let date):
-            return "Sertifikat hali kuchga kirmagan: \(date.formatted())"
+            return "Sertifikat hali kuchga kirmagan: \(Self.formatDate(date))"
         case .certificateRevoked(let reason):
             return "Sertifikat bekor qilingan: \(reason.description)"
         case .invalidCertificateChain(let details):
@@ -257,6 +256,14 @@ public enum VerificationError: Error, Sendable, Equatable {
         case .unknown(let msg):
             return "Noma'lum xato: \(msg)"
         }
+    }
+
+    private static func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        formatter.locale = Locale(identifier: "uz_UZ")
+        return formatter.string(from: date)
     }
 }
 

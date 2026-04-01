@@ -117,7 +117,8 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     ///   - data: .p12 fayl content
     ///   - password: Certificate password
     /// - Returns: Import qilingan certificate info
-    public func importCertificate(data: Data, password: String, login: String) async throws
+    public func importCertificate(data: Data, password: String, login: String)
+        async throws
         -> CertificateInfo
     {
 
@@ -169,7 +170,8 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     ///   - data: Imzolanadigan ma'lumot
     ///   - password: Certificate password
     /// - Returns: Imzo natijasi
-    public func sign(data: Data, password: String, login: String? = "") async throws
+    public func sign(data: Data, password: String, login: String? = "")
+        async throws
         -> SignatureResult
     {
 
@@ -342,9 +344,13 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     // MARK: - Private: Keychain Operations
 
     /// .p12 ni Keychain'ga saqlash
-    private func saveToKeychain(p12Data: Data, certificatePassword: String, login: String) throws {
+    private func saveToKeychain(
+        p12Data: Data,
+        certificatePassword: String,
+        login: String
+    ) throws {
 
-        let hashedKey = hashKey(key: login+certificatePassword)
+        let hashedKey = hashKey(key: login + certificatePassword)
 
         // Avval eskisini o'chirish (agar bor bo'lsa)
         let deleteQuery: [String: Any] = [
@@ -440,7 +446,8 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             throw MuhrError.invalidCertificateFormat
         }
 
-        let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
+        let identity =
+            firstItem[kSecImportItemIdentity as String] as! SecIdentity
         return identity
     }
 
@@ -526,8 +533,12 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             let cn = (commonNameRef as String?) ?? "Unknown"
 
             var errRef: Unmanaged<CFError>?
-            let serialData = SecCertificateCopySerialNumberData(cert, &errRef) as Data? ?? Data()
-            let serial = serialData.map { String(format: "%02X", $0) }.joined(separator: ":")
+            let serialData =
+                SecCertificateCopySerialNumberData(cert, &errRef) as Data?
+                ?? Data()
+            let serial = serialData.map { String(format: "%02X", $0) }.joined(
+                separator: ":"
+            )
 
             let now = Date()
             fields = CertificateFields(
@@ -633,7 +644,9 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     ///   - password: Certificate password
     ///   - login: Foydalanuvchi login
     /// - Returns: CMS/PKCS#7 signed message (DER format, Base64 ga tayyor)
-    public func signCMS(data: Data, password: String, login: String? = "") async throws -> Data {
+    public func signCMS(data: Data, password: String, login: String? = "")
+        async throws -> Data
+    {
         // 1. Keychain'dan .p12 olish
         let p12Data = try getFromKeychain(key: (login ?? "") + password)
 
@@ -683,7 +696,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         failedAttempts = 0
 
         #if DEBUG
-        print("✅ CMS signed message created: \(cmsData.count) bytes")
+            print("✅ CMS signed message created: \(cmsData.count) bytes")
         #endif
 
         return cmsData
@@ -703,17 +716,22 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         let algorithm: SecKeyAlgorithm = .rsaSignatureMessagePKCS1v15SHA1
 
         guard SecKeyIsAlgorithmSupported(privateKey, .sign, algorithm) else {
-            throw MuhrError.unsupportedAlgorithm(algorithm: "rsaSignatureMessagePKCS1v15SHA1")
+            throw MuhrError.unsupportedAlgorithm(
+                algorithm: "rsaSignatureMessagePKCS1v15SHA1"
+            )
         }
 
         var error: Unmanaged<CFError>?
-        guard let signature = SecKeyCreateSignature(
-            privateKey,
-            algorithm,
-            data as CFData,
-            &error
-        ) as Data? else {
-            let msg = error?.takeRetainedValue().localizedDescription ?? "Unknown"
+        guard
+            let signature = SecKeyCreateSignature(
+                privateKey,
+                algorithm,
+                data as CFData,
+                &error
+            ) as Data?
+        else {
+            let msg =
+                error?.takeRetainedValue().localizedDescription ?? "Unknown"
             throw MuhrError.signingFailed(reason: msg)
         }
 
@@ -738,13 +756,16 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         // DigestAlgorithmIdentifier: SHA-1
         let digestAlgId = DERBuilder.sequence([
             DERBuilder.oid(Self.oidSHA1),
-            DERBuilder.null()
+            DERBuilder.null(),
         ])
 
         // EncapsulatedContentInfo
         let eContent = DERBuilder.sequence([
             DERBuilder.oid(Self.oidPKCS7Data),  // id-data
-            DERBuilder.explicit(tag: 0, content: DERBuilder.octetString(content))
+            DERBuilder.explicit(
+                tag: 0,
+                content: DERBuilder.octetString(content)
+            ),
         ])
 
         // SignerInfo
@@ -756,17 +777,17 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
 
         // SignedData
         let signedData = DERBuilder.sequence([
-            DERBuilder.integer(1),                                  // version
-            DERBuilder.set([digestAlgId]),                          // digestAlgorithms
-            eContent,                                               // encapContentInfo
-            DERBuilder.implicit(tag: 0, content: certificateDER),   // certificates [0]
-            DERBuilder.set([signerInfo])                            // signerInfos
+            DERBuilder.integer(1),  // version
+            DERBuilder.set([digestAlgId]),  // digestAlgorithms
+            eContent,  // encapContentInfo
+            DERBuilder.implicit(tag: 0, content: certificateDER),  // certificates [0]
+            DERBuilder.set([signerInfo]),  // signerInfos
         ])
 
         // ContentInfo wrapper
         return DERBuilder.sequence([
             DERBuilder.oid(Self.oidPKCS7SignedData),  // id-signedData
-            DERBuilder.explicit(tag: 0, content: signedData)
+            DERBuilder.explicit(tag: 0, content: signedData),
         ])
     }
 
@@ -782,7 +803,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             DERBuilder.oid(Self.oidContentType),
             DERBuilder.set([
                 DERBuilder.oid(Self.oidPKCS7Data)  // id-data
-            ])
+            ]),
         ])
 
         // 2. signing-time attribute
@@ -790,7 +811,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             DERBuilder.oid(Self.oidSigningTime),
             DERBuilder.set([
                 DERBuilder.utcTime(Date())
-            ])
+            ]),
         ])
 
         // 3. message-digest attribute (SHA-1 digest — 20 bytes)
@@ -798,7 +819,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             DERBuilder.oid(Self.oidMessageDigest),
             DERBuilder.set([
                 DERBuilder.octetString(contentDigest)
-            ])
+            ]),
         ])
 
         // 4. CMSAlgorithmProtection attribute (RFC 6211)
@@ -809,22 +830,27 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         let cmsAlgProtectionValue = DERBuilder.sequence([
             DERBuilder.sequence([
                 DERBuilder.oid(Self.oidSHA1),
-                DERBuilder.null()
+                DERBuilder.null(),
             ]),
-            DERBuilder.implicit(tag: 1, content:
-                DERBuilder.sequence([
-                    DERBuilder.oid(Self.oidRSAEncryption),
-                    DERBuilder.null()
-                ])
-            )
+            DERBuilder.implicit(
+                tag: 1,
+                content:
+                    DERBuilder.sequence([
+                        DERBuilder.oid(Self.oidRSAEncryption),
+                        DERBuilder.null(),
+                    ])
+            ),
         ])
 
         let cmsAlgProtectionAttr = DERBuilder.sequence([
             DERBuilder.oid(Self.oidCMSAlgorithmProtection),
-            DERBuilder.set([cmsAlgProtectionValue])
+            DERBuilder.set([cmsAlgProtectionValue]),
         ])
 
-        return [contentTypeAttr, signingTimeAttr, messageDigestAttr, cmsAlgProtectionAttr]
+        return [
+            contentTypeAttr, signingTimeAttr, messageDigestAttr,
+            cmsAlgProtectionAttr,
+        ]
     }
 
     /// SignerInfo strukturasini yaratish (RFC 5652 Section 5.3)
@@ -844,32 +870,35 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         // IssuerAndSerialNumber
         let signerIdentifier = DERBuilder.sequence([
             DERBuilder.raw(issuerDER),
-            DERBuilder.raw(serialNumberDER)
+            DERBuilder.raw(serialNumberDER),
         ])
 
         // DigestAlgorithmIdentifier: SHA-1
         let digestAlgId = DERBuilder.sequence([
             DERBuilder.oid(Self.oidSHA1),
-            DERBuilder.null()
+            DERBuilder.null(),
         ])
 
         // SignedAttributes — [0] IMPLICIT tag bilan
         let signedAttrsContent = signedAttrs.reduce(Data()) { $0 + $1 }
-        let signedAttrsImplicit = DERBuilder.implicit(tag: 0, content: signedAttrsContent)
+        let signedAttrsImplicit = DERBuilder.implicit(
+            tag: 0,
+            content: signedAttrsContent
+        )
 
         // SignatureAlgorithmIdentifier: rsaEncryption (Android kabi)
         let sigAlgId = DERBuilder.sequence([
             DERBuilder.oid(Self.oidRSAEncryption),
-            DERBuilder.null()
+            DERBuilder.null(),
         ])
 
         return DERBuilder.sequence([
-            DERBuilder.integer(1),            // version
-            signerIdentifier,                 // sid
-            digestAlgId,                      // digestAlgorithm: SHA-1
-            signedAttrsImplicit,              // signedAttrs [0]
-            sigAlgId,                         // signatureAlgorithm: rsaEncryption
-            DERBuilder.octetString(signature) // signature
+            DERBuilder.integer(1),  // version
+            signerIdentifier,  // sid
+            digestAlgId,  // digestAlgorithm: SHA-1
+            signedAttrsImplicit,  // signedAttrs [0]
+            sigAlgId,  // signatureAlgorithm: rsaEncryption
+            DERBuilder.octetString(signature),  // signature
         ])
     }
 
