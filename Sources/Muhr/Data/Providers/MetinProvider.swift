@@ -1,6 +1,6 @@
 //
 //  MetinProvider.swift
-//  MuhrMetin
+//  Muhr
 //
 //  Created by Muhammad on 01/04/26.
 //
@@ -11,7 +11,6 @@
 import CommonCrypto
 import Foundation
 import MetinSDK
-import Muhr
 
 // MARK: - Metin Provider
 /// O'zbekiston ERI/ЭЦП tizimi orqali imzolash provider'i

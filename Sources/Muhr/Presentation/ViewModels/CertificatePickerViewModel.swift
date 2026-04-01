@@ -106,8 +106,8 @@ public final class CertificatePickerViewModel: ObservableObject {
         state = .loading
 
         do {
-            let cert = try await Muhr.importCertificate(
-                fileURL: file.url,
+            let cert = try await Muhr.styx.importCertificate(
+                data: try Data(contentsOf: file.url),
                 password: password,
                 login: login
             )

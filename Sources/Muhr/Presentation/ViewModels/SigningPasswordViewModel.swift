@@ -70,10 +70,7 @@ public final class SigningPasswordViewModel: ObservableObject {
         state = .signing
 
         do {
-            let provider = StyxProvider()
-            try await provider.initialize()
-
-            let result = try await provider.sign(
+            let result = try await Muhr.styx.sign(
                 data: dataToSign,
                 password: password,
                 login: login
