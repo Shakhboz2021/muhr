@@ -25,7 +25,6 @@ import Security
 public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
 
     // MARK: - Constants
-
     private var serviceName: String {
         let bundleID = Bundle.main.bundleIdentifier ?? "uz.muhr"
         return bundleID + ".styx"
@@ -41,7 +40,6 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     public var requiresAuthentication: Bool { true }
 
     // MARK: - Private Properties
-
     private var failedAttempts: Int = 0
     private weak var delegate: ProviderDelegate?
 
@@ -51,7 +49,6 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     )
 
     // MARK: - Initializer
-
     public init(
         configuration: ProviderConfiguration = .styx,
         delegate: ProviderDelegate? = nil
@@ -61,7 +58,6 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
     }
 
     // MARK: - Lifecycle
-
     public func initialize() async throws {
         guard !isInitialized else { return }
 
@@ -437,17 +433,14 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             throw MuhrError.invalidCertificateFormat
         }
 
-        let itemsArray = items as! [[String: Any]]
-
-        guard let firstItem = itemsArray.first,
+        guard let itemsArray = items as? [[String: Any]],
+            let firstItem = itemsArray.first,
             firstItem[kSecImportItemIdentity as String] != nil
         else {
             throw MuhrError.invalidCertificateFormat
         }
 
-        let identity =
-            firstItem[kSecImportItemIdentity as String] as! SecIdentity
-
+        let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
         return identity
     }
 
@@ -519,43 +512,53 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             throw MuhrError.invalidCertificateFormat
         }
 
-        // Serial number
-        var error: Unmanaged<CFError>?
-        guard
-            let serialData = SecCertificateCopySerialNumberData(cert, &error)
-                as Data?
-        else {
-            throw MuhrError.invalidCertificateFormat
+        let certDER = SecCertificateCopyData(cert) as Data
+        var parser = DERParser(data: certDER)
+
+        // DERParser orqali to'liq parse qilish
+        let fields: CertificateFields
+        if let parsed = try? parser.extractCertificateFields() {
+            fields = parsed
+        } else {
+            // Fallback: Security framework dan faqat CN olish
+            var commonNameRef: CFString?
+            SecCertificateCopyCommonName(cert, &commonNameRef)
+            let cn = (commonNameRef as String?) ?? "Unknown"
+
+            var errRef: Unmanaged<CFError>?
+            let serialData = SecCertificateCopySerialNumberData(cert, &errRef) as Data? ?? Data()
+            let serial = serialData.map { String(format: "%02X", $0) }.joined(separator: ":")
+
+            let now = Date()
+            fields = CertificateFields(
+                serialNumber: serial,
+                commonName: cn,
+                organization: nil,
+                organizationUnit: nil,
+                country: nil,
+                pinfl: nil,
+                stir: nil,
+                issuerName: "Unknown",
+                notBefore: now.addingTimeInterval(-365 * 24 * 60 * 60),
+                notAfter: now.addingTimeInterval(365 * 24 * 60 * 60)
+            )
         }
-        let serialNumber = serialData.map { String(format: "%02X", $0) }.joined(
-            separator: ":"
-        )
-
-        // Common name
-        var commonName: CFString?
-        SecCertificateCopyCommonName(cert, &commonName)
-        let cn = (commonName as String?) ?? "Unknown"
-
-        // Dates (simplified - real implementation should parse from certificate)
-        let now = Date()
-        let validFrom = now.addingTimeInterval(-365 * 24 * 60 * 60)
-        let validTo = now.addingTimeInterval(365 * 24 * 60 * 60)
 
         // Algorithm
         let (algorithm, keySize) = detectAlgorithm(from: cert)
 
         return CertificateInfo(
-            id: serialNumber,
-            serialNumber: serialNumber,
-            commonName: cn,
-            organization: nil,
-            organizationUnit: nil,
-            country: nil,
-            pinfl: nil,
-            stir: nil,
-            issuerName: "Unknown",
-            validFrom: validFrom,
-            validTo: validTo,
+            id: fields.serialNumber,
+            serialNumber: fields.serialNumber,
+            commonName: fields.commonName,
+            organization: fields.organization,
+            organizationUnit: fields.organizationUnit,
+            country: fields.country,
+            pinfl: fields.pinfl,
+            stir: fields.stir,
+            issuerName: fields.issuerName,
+            validFrom: fields.notBefore,
+            validTo: fields.notAfter,
             algorithm: algorithm,
             keySize: keySize,
             secCertificate: cert,
@@ -578,9 +581,10 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
 
         var keyTypeString = ""
         if let cfString = keyTypeRef as CFTypeRef?,
-            CFGetTypeID(cfString) == CFStringGetTypeID()
+            CFGetTypeID(cfString) == CFStringGetTypeID(),
+            let str = cfString as? String
         {
-            keyTypeString = cfString as! CFString as String
+            keyTypeString = str
         }
 
         let ecType = kSecAttrKeyTypeECSECPrimeRandom as String

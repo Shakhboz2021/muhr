@@ -251,9 +251,10 @@ public final class KeychainCertificateRepository: CertificateRepository,
         else {
             throw MuhrError.invalidCertificateFormat
         }
-        let identity =
-            firstItem[kSecImportItemIdentity as String]
-            as! SecIdentity
+        guard firstItem[kSecImportItemIdentity as String] != nil else {
+            throw MuhrError.invalidCertificateFormat
+        }
+        let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
         try saveIdentityToKeychain(identity)
 
         let certInfo = try parseCertificateInfo(from: identity)
@@ -359,45 +360,53 @@ public final class KeychainCertificateRepository: CertificateRepository,
         privateKey: SecKey?
     ) throws -> CertificateInfo {
 
-        // Serial number
-        var error: Unmanaged<CFError>?
-        guard
-            let serialData = SecCertificateCopySerialNumberData(
-                certificate,
-                &error
-            ) as Data?
-        else {
-            throw MuhrError.invalidCertificateFormat
+        let certDER = SecCertificateCopyData(certificate) as Data
+        var parser = DERParser(data: certDER)
+
+        // DERParser orqali to'liq parse qilish
+        let fields: CertificateFields
+        if let parsed = try? parser.extractCertificateFields() {
+            fields = parsed
+        } else {
+            // Fallback: Security framework dan faqat CN olish
+            var commonNameRef: CFString?
+            SecCertificateCopyCommonName(certificate, &commonNameRef)
+            let cn = (commonNameRef as String?) ?? "Unknown"
+
+            var errRef: Unmanaged<CFError>?
+            let serialData = SecCertificateCopySerialNumberData(certificate, &errRef) as Data? ?? Data()
+            let serial = serialData.map { String(format: "%02X", $0) }.joined(separator: ":")
+
+            let now = Date()
+            fields = CertificateFields(
+                serialNumber: serial,
+                commonName: cn,
+                organization: nil,
+                organizationUnit: nil,
+                country: nil,
+                pinfl: nil,
+                stir: nil,
+                issuerName: "Unknown",
+                notBefore: now.addingTimeInterval(-365 * 24 * 60 * 60),
+                notAfter: now.addingTimeInterval(365 * 24 * 60 * 60)
+            )
         }
-        let serialNumber = serialData.map { String(format: "%02X", $0) }.joined(
-            separator: ":"
-        )
-
-        // Common Name
-        var commonName: CFString?
-        SecCertificateCopyCommonName(certificate, &commonName)
-        let cn = (commonName as String?) ?? "Unknown"
-
-        // Validity dates (simplified)
-        let now = Date()
-        let validFrom = now.addingTimeInterval(-365 * 24 * 60 * 60)
-        let validTo = now.addingTimeInterval(365 * 24 * 60 * 60)
 
         // Algorithm
         let (algorithm, keySize) = detectAlgorithm(from: certificate)
 
         return CertificateInfo(
-            id: serialNumber,
-            serialNumber: serialNumber,
-            commonName: cn,
-            organization: nil,
-            organizationUnit: nil,
-            country: nil,
-            pinfl: nil,
-            stir: nil,
-            issuerName: "Unknown Issuer",
-            validFrom: validFrom,
-            validTo: validTo,
+            id: fields.serialNumber,
+            serialNumber: fields.serialNumber,
+            commonName: fields.commonName,
+            organization: fields.organization,
+            organizationUnit: fields.organizationUnit,
+            country: fields.country,
+            pinfl: fields.pinfl,
+            stir: fields.stir,
+            issuerName: fields.issuerName,
+            validFrom: fields.notBefore,
+            validTo: fields.notAfter,
             algorithm: algorithm,
             keySize: keySize,
             secCertificate: certificate,
@@ -428,9 +437,10 @@ public final class KeychainCertificateRepository: CertificateRepository,
         // CFString ni String ga convert qilish
         var keyTypeString: String = ""
         if let cfString = keyTypeRef as CFTypeRef?,
-            CFGetTypeID(cfString) == CFStringGetTypeID()
+            CFGetTypeID(cfString) == CFStringGetTypeID(),
+            let str = cfString as? String
         {
-            keyTypeString = cfString as! CFString as String
+            keyTypeString = str
         }
 
         // EC key type'larni tekshirish

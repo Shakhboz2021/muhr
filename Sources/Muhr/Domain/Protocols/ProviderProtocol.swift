@@ -152,11 +152,11 @@ public protocol ProviderProtocol: AnyObject, Sendable {
         credential: String
     ) async throws -> SignatureResult
 
-    /// Credential tekshirish (login uchun)
+    /// Password tekshirish (login uchun)
     ///
-    /// - Parameter credential: Tekshiriladigan credential
+    /// - Parameter key: login+password kombinatsiyasi yoki faqat password
     /// - Returns: true = to'g'ri
-    func verifyCredential(_ credential: String) async throws -> Bool
+    func verifyPassword(_ key: String) async throws -> Bool
 
     // MARK: - Certificate Operations
 
@@ -238,7 +238,7 @@ extension ProviderProtocol {
     }
 
     /// Default: har doim true
-    public func verifyCredential(_ credential: String) async throws -> Bool {
+    public func verifyPassword(_ key: String) async throws -> Bool {
         return true
     }
 }
