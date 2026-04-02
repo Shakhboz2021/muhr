@@ -8,616 +8,673 @@
 // MetinSDK faqat iOS da mavjud (xcframework — iOS only binary)
 #if canImport(MetinSDK)
 
-import CommonCrypto
-import Foundation
-import MetinSDK
+    import CommonCrypto
+    import Foundation
+    import MetinSDK
 
-// MARK: - Metin Provider
-/// O'zbekiston ERI/ЭЦП tizimi orqali imzolash provider'i
-///
-/// MetinSDK yordamida server tomonida sertifikat saqlash va
-/// PIN kod orqali imzolashni ta'minlaydi.
-///
-/// ## Arxitektura:
-/// ```
-/// MuhrMetin (alohida modul)
-///   └── MetinProvider → ProviderProtocol (Muhr core)
-///         └── MetinSDK (binary framework, iOS only)
-/// ```
-///
-/// ## Foydalanish tartibi:
-/// ```swift
-/// let provider = MetinProvider(
-///     configuration: .init(
-///         type: .metin,
-///         additionalParameters: ["base_url": "https://api.metin.uz"]
-///     )
-/// )
-/// try await provider.initialize()
-///
-/// // OTP → getUser → addUser → addCertificate → sign
-/// ```
-///
-/// ## Xavfsizlik modeli:
-/// - Sertifikat va private key MetinSDK server tomonida saqlanadi
-/// - Har bir imzolash PIN kod talab qiladi
-/// - PIN bloklanishi server tomonida boshqariladi
-public final class MetinProvider: ProviderProtocol, @unchecked Sendable {
+    // MARK: - Metin Provider
+    /// O'zbekiston ERI/ЭЦП tizimi orqali imzolash provider'i
+    ///
+    /// MetinSDK yordamida server tomonida sertifikat saqlash va
+    /// PIN kod orqali imzolashni ta'minlaydi.
+    ///
+    /// ## Arxitektura:
+    /// ```
+    /// MuhrMetin (alohida modul)
+    ///   └── MetinProvider → ProviderProtocol (Muhr core)
+    ///         └── MetinSDK (binary framework, iOS only)
+    /// ```
+    ///
+    /// ## Foydalanish tartibi:
+    /// ```swift
+    /// let provider = MetinProvider(
+    ///     configuration: .init(
+    ///         type: .metin,
+    ///         additionalParameters: ["base_url": "https://api.metin.uz"]
+    ///     )
+    /// )
+    /// try await provider.initialize()
+    ///
+    /// // OTP → getUser → addUser → addCertificate → sign
+    /// ```
+    ///
+    /// ## Xavfsizlik modeli:
+    /// - Sertifikat va private key MetinSDK server tomonida saqlanadi
+    /// - Har bir imzolash PIN kod talab qiladi
+    /// - PIN bloklanishi server tomonida boshqariladi
+    public final class MetinProvider: ProviderProtocol, @unchecked Sendable {
 
-    // MARK: - Properties
+        // MARK: - Properties
 
-    public let type: ProviderType = .metin
-    public private(set) var isInitialized: Bool = false
-    public private(set) var availableCertificates: [CertificateInfo] = []
-    public private(set) var configuration: ProviderConfiguration
-    public var requiresAuthentication: Bool { true }
+        public let type: ProviderType = .metin
+        public private(set) var isInitialized: Bool = false
+        public private(set) var availableCertificates: [CertificateInfo] = []
+        public private(set) var configuration: ProviderConfiguration
+        public var requiresAuthentication: Bool { true }
 
-    // MARK: - Private Properties
+        // MARK: - Private Properties
 
-    private let sdk = MetinManager.shared
-    private weak var delegate: ProviderDelegate?
+        private let sdk = MetinManager.shared
+        private weak var delegate: ProviderDelegate?
 
-    private let queue = DispatchQueue(
-        label: "com.muhr.metin",
-        qos: .userInitiated
-    )
+        private let queue = DispatchQueue(
+            label: "com.muhr.metin",
+            qos: .userInitiated
+        )
 
-    // MARK: - Initializer
+        // MARK: - Initializer
 
-    public init(
-        configuration: ProviderConfiguration = .metin,
-        delegate: ProviderDelegate? = nil
-    ) {
-        self.configuration = configuration
-        self.delegate = delegate
-    }
+        public init(
+            configuration: ProviderConfiguration = .metin,
+            delegate: ProviderDelegate? = nil
+        ) {
+            self.configuration = configuration
+            self.delegate = delegate
+        }
 
-    // MARK: - Lifecycle
+        // MARK: - Lifecycle
 
-    public func initialize() async throws {
-        guard !isInitialized else { return }
+        public func initialize() async throws {
+            guard !isInitialized else { return }
 
-        let baseUrl = configuration.additionalParameters["base_url"] ?? ""
-        guard !baseUrl.isEmpty else {
-            throw MuhrError.providerConfigurationError(
-                reason: "MetinProvider uchun 'base_url' konfiguratsiyada ko'rsatilishi shart"
+            let baseUrl = configuration.additionalParameters["base_url"] ?? ""
+            guard !baseUrl.isEmpty else {
+                throw MuhrError.providerConfigurationError(
+                    reason:
+                        "MetinProvider uchun 'base_url' konfiguratsiyada ko'rsatilishi shart"
+                )
+            }
+
+            sdk.initialize(baseUrl: baseUrl)
+
+            await MainActor.run {
+                self.isInitialized = true
+            }
+
+            #if DEBUG
+                print("✅ MetinProvider initialized: \(sdk.getVersion())")
+            #endif
+        }
+
+        public func shutdown() async {
+            await MainActor.run {
+                self.availableCertificates = []
+                self.isInitialized = false
+            }
+        }
+
+        // MARK: - Certificate Operations
+
+        public func loadCertificates() async throws -> [CertificateInfo] {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+            // Metin da sertifikatlar sign paytida lazim bo'ladi,
+            // alohida yuklab saqlash kerak emas
+            return availableCertificates
+        }
+
+        /// Metin da "import" to'g'ridan-to'g'ri ishlamaydi.
+        /// Ro'yxatdan o'tish uchun `generateOTP` → `addUser` → `addCertificate` ketma-ketligini ishlating.
+        public func importCertificate(
+            data: Data,
+            password pinCode: String,
+            login: String
+        ) async throws -> CertificateInfo {
+            throw MuhrError.operationNotSupported
+        }
+
+        public func deleteCertificate(_ certificate: CertificateInfo)
+            async throws
+        {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            if let pinfl = certificate.pinfl {
+                sdk.deleteCertificate(pinfl: pinfl, inn: nil)
+            } else if let stir = certificate.stir {
+                sdk.deleteCertificate(pinfl: nil, inn: stir)
+            } else {
+                sdk.deleteCertificate(serialNumber: certificate.serialNumber)
+            }
+        }
+
+        // MARK: - Signing
+
+        /// PIN kod va sertifikat bilan imzolash
+        ///
+        /// - Parameters:
+        ///   - data: Imzolanadigan ma'lumot (ichida Base64 ga aylantiriladi)
+        ///   - certificate: Sertifikat (`serialNumber` ishlatiladi)
+        ///   - credential: PIN kod
+        public func sign(
+            data: Data,
+            with certificate: CertificateInfo,
+            credential pinCode: String
+        ) async throws -> SignatureResult {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            let message = data.base64EncodedString()
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.sign(
+                    pinCode: pinCode,
+                    message: message,
+                    serialNumber: certificate.serialNumber
+                ) { result in
+                    switch result {
+                    case .success(let signatureBase64):
+                        guard
+                            let signatureData = Data(
+                                base64Encoded: signatureBase64
+                            )
+                        else {
+                            continuation.resume(
+                                throwing: MuhrError.signingFailed(
+                                    reason: "Imzo Base64 decode muvaffaqiyatsiz"
+                                )
+                            )
+                            return
+                        }
+                        let dataHash = self.sha256(data)
+                        let signResult = SignatureResult(
+                            signature: signatureData,
+                            dataHash: dataHash,
+                            timestamp: Date(),
+                            certificate: certificate,
+                            algorithm: certificate.algorithm
+                        )
+                        continuation.resume(returning: signResult)
+
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Delegate orqali PIN so'rab imzolash
+        public func sign(
+            data: Data,
+            with certificate: CertificateInfo
+        ) async throws -> SignatureResult {
+            let pinCode = try await requestPin()
+            return try await sign(
+                data: data,
+                with: certificate,
+                credential: pinCode
             )
         }
 
-        sdk.initialize(baseUrl: baseUrl)
+        // MARK: - CMS Signing
 
-        await MainActor.run {
-            self.isInitialized = true
-        }
+        /// Mavjud CMS ga Metin imzosini qo'shish
+        ///
+        /// - Parameters:
+        ///   - cms: Mavjud CMS string (bo'sh string = yangi CMS)
+        ///   - pinCode: PIN kod
+        ///   - certificate: Sertifikat
+        public func signCMS(
+            cms: String,
+            pinCode: String,
+            certificate: CertificateInfo
+        ) async throws -> String {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
 
-        #if DEBUG
-        print("✅ MetinProvider initialized: \(sdk.getVersion())")
-        #endif
-    }
-
-    public func shutdown() async {
-        await MainActor.run {
-            self.availableCertificates = []
-            self.isInitialized = false
-        }
-    }
-
-    // MARK: - Certificate Operations
-
-    public func loadCertificates() async throws -> [CertificateInfo] {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-        // Metin da sertifikatlar sign paytida lazim bo'ladi,
-        // alohida yuklab saqlash kerak emas
-        return availableCertificates
-    }
-
-    /// Metin da "import" to'g'ridan-to'g'ri ishlamaydi.
-    /// Ro'yxatdan o'tish uchun `generateOTP` → `addUser` → `addCertificate` ketma-ketligini ishlating.
-    public func importCertificate(
-        data: Data,
-        password pinCode: String,
-        login: String
-    ) async throws -> CertificateInfo {
-        throw MuhrError.operationNotSupported
-    }
-
-    public func deleteCertificate(_ certificate: CertificateInfo) async throws {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        if let pinfl = certificate.pinfl {
-            sdk.deleteCertificate(pinfl: pinfl, inn: nil)
-        } else if let stir = certificate.stir {
-            sdk.deleteCertificate(pinfl: nil, inn: stir)
-        } else {
-            sdk.deleteCertificate(serialNumber: certificate.serialNumber)
-        }
-    }
-
-    // MARK: - Signing
-
-    /// PIN kod va sertifikat bilan imzolash
-    ///
-    /// - Parameters:
-    ///   - data: Imzolanadigan ma'lumot (ichida Base64 ga aylantiriladi)
-    ///   - certificate: Sertifikat (`serialNumber` ishlatiladi)
-    ///   - credential: PIN kod
-    public func sign(
-        data: Data,
-        with certificate: CertificateInfo,
-        credential pinCode: String
-    ) async throws -> SignatureResult {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        let message = data.base64EncodedString()
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.sign(
-                pinCode: pinCode,
-                message: message,
-                serialNumber: certificate.serialNumber
-            ) { result in
-                switch result {
-                case .success(let signatureBase64):
-                    guard let signatureData = Data(base64Encoded: signatureBase64) else {
-                        continuation.resume(
-                            throwing: MuhrError.signingFailed(reason: "Imzo Base64 decode muvaffaqiyatsiz")
-                        )
-                        return
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.signCMS(
+                    pinCode: pinCode,
+                    cms: cms,
+                    serialNumber: certificate.serialNumber
+                ) { result in
+                    switch result {
+                    case .success(let signedCMS):
+                        continuation.resume(returning: signedCMS)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
-                    let dataHash = sha256(data)
-                    let signResult = SignatureResult(
-                        signature: signatureData,
-                        dataHash: dataHash,
-                        timestamp: Date(),
-                        certificate: certificate,
-                        algorithm: certificate.algorithm
-                    )
-                    continuation.resume(returning: signResult)
-
-                case .failure(let error):
-                    continuation.resume(throwing: error.toMuhrError())
                 }
+            }
+        }
+
+        // MARK: - Verification
+
+        public func verify(
+            signature: Data,
+            originalData: Data,
+            certificate: CertificateInfo?
+        ) async throws -> VerificationResult {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+            let cmsBase64 = signature.base64EncodedString()
+            return try await verifyCMS(cmsBase64)
+        }
+
+        /// CMS string ni Metin server orqali tekshirish
+        public func verifyCMS(_ cms: String) async throws -> VerificationResult
+        {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.verify(cms: cms) { result in
+                    switch result {
+                    case .success(let metinResult):
+                        let verResult = VerificationResult(
+                            isSignatureValid: metinResult.isVerified,
+                            isCertificateValid: true,
+                            isCertificateChainValid: true,
+                            isCertificateNotRevoked: !metinResult.isRevoked,
+                            signerCertificate: nil,
+                            signedAt: Date(),
+                            errors: metinResult.isRevoked
+                                ? [.certificateRevoked(reason: .unspecified)]
+                                : [],
+                            warnings: []
+                        )
+                        continuation.resume(returning: verResult)
+
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        // MARK: - PIN
+
+        public func verifyPassword(_ key: String) async throws -> Bool {
+            // Metin da PIN tekshirish server tomonida (sign orqali)
+            return true
+        }
+
+        // MARK: - Configuration
+
+        public func updateConfiguration(_ configuration: ProviderConfiguration)
+            async throws
+        {
+            self.configuration = configuration
+        }
+
+        public func setDelegate(_ delegate: ProviderDelegate?) {
+            self.delegate = delegate
+        }
+
+        // MARK: - Registration Flow
+
+        /// OTP generatsiya qilish — ro'yxatdan o'tishning birinchi qadami
+        ///
+        /// - Parameters:
+        ///   - pinfl: PINFL (14 raqam), jismoniy shaxs uchun
+        ///   - inn: INN/STIR (9 raqam), yuridik shaxs uchun
+        ///   - phone: Telefon raqami ("+998XXXXXXXXX")
+        ///   - otpToken: OTP token
+        public func generateOTP(
+            pinfl: String? = nil,
+            inn: String? = nil,
+            phone: String,
+            otpToken: String
+        ) async throws -> Int {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.generateOtp(
+                    pinfl: pinfl,
+                    inn: inn,
+                    phone: phone,
+                    otpToken: otpToken
+                ) { result in
+                    switch result {
+                    case .success(let otp): continuation.resume(returning: otp)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Foydalanuvchi ma'lumotlarini olish
+        public func getUser(
+            pinfl: String? = nil,
+            inn: String? = nil,
+            phone: String,
+            otp: Int
+        ) async throws -> MetinUser {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.getUser(pinfl: pinfl, inn: inn, phone: phone, otp: otp) {
+                    result in
+                    switch result {
+                    case .success(let user):
+                        continuation.resume(returning: user)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Yangi foydalanuvchi qo'shish
+        public func addUser(
+            emailAddress: String,
+            commonName: String,
+            organizationUnitName: String,
+            organizationName: String,
+            streetAddress: String,
+            localityName: String,
+            stateOrProvinceName: String,
+            countryName: Country,
+            pinfl: String? = nil,
+            inn: String? = nil,
+            phoneNumber: String,
+            otp: Int
+        ) async throws -> MetinAddUserResult {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.addUser(
+                    emailAddress: emailAddress,
+                    commonName: commonName,
+                    organizationUnitName: organizationUnitName,
+                    organizationName: organizationName,
+                    streetAddress: streetAddress,
+                    localityName: localityName,
+                    stateOrProvinceName: stateOrProvinceName,
+                    countryName: countryName,
+                    pinfl: pinfl,
+                    inn: inn,
+                    phoneNumber: phoneNumber,
+                    otp: otp
+                ) { result in
+                    switch result {
+                    case .success(let r): continuation.resume(returning: r)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Sertifikat qo'shish (userId kerak — `addUser` dan olinadi)
+        public func addCertificate(
+            userId: String,
+            emailAddress: String,
+            commonName: String,
+            organizationUnitName: String,
+            organizationName: String,
+            streetAddress: String,
+            localityName: String,
+            stateOrProvinceName: String,
+            countryName: Country,
+            pinfl: String? = nil,
+            inn: String? = nil,
+            pinCode: String,
+            surName: String = ""
+        ) async throws -> MetinAddCertificateResult {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.addCertificate(
+                    userId: userId,
+                    emailAddress: emailAddress,
+                    commonName: commonName,
+                    organizationUnitName: organizationUnitName,
+                    organizationName: organizationName,
+                    streetAddress: streetAddress,
+                    localityName: localityName,
+                    stateOrProvinceName: stateOrProvinceName,
+                    countryName: countryName,
+                    pinfl: pinfl,
+                    inn: inn,
+                    pinCode: pinCode,
+                    surName: surName
+                ) { result in
+                    switch result {
+                    case .success(let r): continuation.resume(returning: r)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Sertifikat ma'lumotlarini serverdan olish
+        public func getCertificate(serialNumber: String) async throws
+            -> MetinCertificate
+        {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.getCertificate(serialNumber: serialNumber) { result in
+                    switch result {
+                    case .success(let cert):
+                        continuation.resume(returning: cert)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// PIN o'zgartirish
+        public func changePin(
+            currentPin: String,
+            newPin: String,
+            serialNumber: String
+        ) async throws {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            try await withCheckedThrowingContinuation {
+                (continuation: CheckedContinuation<Void, Error>) in
+                sdk.changePin(
+                    currentPin: currentPin,
+                    newPin: newPin,
+                    serialNumber: serialNumber
+                ) { result in
+                    switch result {
+                    case .success: continuation.resume()
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        // MARK: - Private Helpers
+
+        private func requestPin() async throws -> String {
+            return try await withCheckedThrowingContinuation { continuation in
+                delegate?.providerRequiresPin(self) { pin in
+                    if let pin {
+                        continuation.resume(returning: pin)
+                    } else {
+                        continuation.resume(throwing: MuhrError.userCancelled)
+                    }
+                }
+            }
+        }
+
+        private func sha256(_ data: Data) -> Data {
+            var digest = [UInt8](
+                repeating: 0,
+                count: Int(CC_SHA256_DIGEST_LENGTH)
+            )
+            data.withUnsafeBytes {
+                _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &digest)
+            }
+            return Data(digest)
+        }
+    }
+
+    // MARK: - MetinSDK Error → MuhrError
+
+    extension MetinSignError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .pinCodeMismatch:
+                return .invalidPin
+            case .certificateExpired(_, _, let notAfter):
+                let expiry =
+                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                return .certificateExpired(expiryDate: expiry)
+            case .invalidCertificate:
+                return .invalidCertificateFormat
+            case .signingFailed(let reason):
+                return .signingFailed(reason: reason)
+            case .innOrPinflMismatch(let reason):
+                return .providerConfigurationError(
+                    reason: "INN/PINFL mos kelmadi: \(reason)"
+                )
             }
         }
     }
 
-    /// Delegate orqali PIN so'rab imzolash
-    public func sign(
-        data: Data,
-        with certificate: CertificateInfo
-    ) async throws -> SignatureResult {
-        let pinCode = try await requestPin()
-        return try await sign(data: data, with: certificate, credential: pinCode)
-    }
-
-    // MARK: - CMS Signing
-
-    /// Mavjud CMS ga Metin imzosini qo'shish
-    ///
-    /// - Parameters:
-    ///   - cms: Mavjud CMS string (bo'sh string = yangi CMS)
-    ///   - pinCode: PIN kod
-    ///   - certificate: Sertifikat
-    public func signCMS(
-        cms: String,
-        pinCode: String,
-        certificate: CertificateInfo
-    ) async throws -> String {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.signCMS(
-                pinCode: pinCode,
-                cms: cms,
-                serialNumber: certificate.serialNumber
-            ) { result in
-                switch result {
-                case .success(let signedCMS):
-                    continuation.resume(returning: signedCMS)
-                case .failure(let error):
-                    continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinSignCmsError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .pinCodeMismatch:
+                return .invalidPin
+            case .certificateExpired(_, _, let notAfter):
+                let expiry =
+                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                return .certificateExpired(expiryDate: expiry)
+            case .invalidCertificate:
+                return .invalidCertificateFormat
+            case .signingFailed(let reason):
+                return .signingFailed(reason: reason)
+            case .alreadyExistSigner(let reason):
+                return .signingFailed(
+                    reason: "Bu sertifikat allaqachon imzo qo'ygan: \(reason)"
+                )
+            case .invalidCms:
+                return .invalidSignatureFormat
+            case .innOrPinflMismatch(let reason):
+                return .providerConfigurationError(
+                    reason: "INN/PINFL mos kelmadi: \(reason)"
+                )
             }
         }
     }
 
-    // MARK: - Verification
-
-    public func verify(
-        signature: Data,
-        originalData: Data,
-        certificate: CertificateInfo?
-    ) async throws -> VerificationResult {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-        let cmsBase64 = signature.base64EncodedString()
-        return try await verifyCMS(cmsBase64)
-    }
-
-    /// CMS string ni Metin server orqali tekshirish
-    public func verifyCMS(_ cms: String) async throws -> VerificationResult {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.verify(cms: cms) { result in
-                switch result {
-                case .success(let metinResult):
-                    let verResult = VerificationResult(
-                        isSignatureValid: metinResult.isVerified,
-                        isCertificateValid: true,
-                        isCertificateChainValid: true,
-                        isCertificateNotRevoked: !metinResult.isRevoked,
-                        signerCertificate: nil,
-                        signedAt: Date(),
-                        errors: metinResult.isRevoked
-                            ? [.certificateRevoked(reason: .unspecified)]
-                            : [],
-                        warnings: []
-                    )
-                    continuation.resume(returning: verResult)
-
-                case .failure(let error):
-                    continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinCmsVerifyError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .serverResponse:
+                return .invalidServerResponse
+            case .httpError(let reason):
+                return .networkError(reason: "HTTP xato: \(reason)")
+            case .networkError(let reason):
+                return .networkError(reason: reason)
             }
         }
     }
 
-    // MARK: - PIN
-
-    public func verifyPassword(_ key: String) async throws -> Bool {
-        // Metin da PIN tekshirish server tomonida (sign orqali)
-        return true
-    }
-
-    // MARK: - Configuration
-
-    public func updateConfiguration(_ configuration: ProviderConfiguration) async throws {
-        self.configuration = configuration
-    }
-
-    public func setDelegate(_ delegate: ProviderDelegate?) {
-        self.delegate = delegate
-    }
-
-    // MARK: - Registration Flow
-
-    /// OTP generatsiya qilish — ro'yxatdan o'tishning birinchi qadami
-    ///
-    /// - Parameters:
-    ///   - pinfl: PINFL (14 raqam), jismoniy shaxs uchun
-    ///   - inn: INN/STIR (9 raqam), yuridik shaxs uchun
-    ///   - phone: Telefon raqami ("+998XXXXXXXXX")
-    ///   - otpToken: OTP token
-    public func generateOTP(
-        pinfl: String? = nil,
-        inn: String? = nil,
-        phone: String,
-        otpToken: String
-    ) async throws -> Int {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.generateOtp(pinfl: pinfl, inn: inn, phone: phone, otpToken: otpToken) { result in
-                switch result {
-                case .success(let otp): continuation.resume(returning: otp)
-                case .failure(let error): continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinGenerateOtpError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .serverResponse:
+                return .invalidServerResponse
+            case .httpError(let reason):
+                return .networkError(reason: "HTTP xato: \(reason)")
+            case .networkError(let reason):
+                return .networkError(reason: reason)
             }
         }
     }
 
-    /// Foydalanuvchi ma'lumotlarini olish
-    public func getUser(
-        pinfl: String? = nil,
-        inn: String? = nil,
-        phone: String,
-        otp: Int
-    ) async throws -> MetinUser {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.getUser(pinfl: pinfl, inn: inn, phone: phone, otp: otp) { result in
-                switch result {
-                case .success(let user): continuation.resume(returning: user)
-                case .failure(let error): continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinGetUserError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .invalidArgument(let reason):
+                return .providerConfigurationError(reason: reason)
+            case .serverResponse:
+                return .invalidServerResponse
+            case .userNotFound:
+                return .certificateNotFound
+            case .wrongOtpCode:
+                return .invalidPin
+            case .httpError(let reason):
+                return .networkError(reason: "HTTP xato: \(reason)")
+            case .networkError(let reason):
+                return .networkError(reason: reason)
             }
         }
     }
 
-    /// Yangi foydalanuvchi qo'shish
-    public func addUser(
-        emailAddress: String,
-        commonName: String,
-        organizationUnitName: String,
-        organizationName: String,
-        streetAddress: String,
-        localityName: String,
-        stateOrProvinceName: String,
-        countryName: Country,
-        pinfl: String? = nil,
-        inn: String? = nil,
-        phoneNumber: String,
-        otp: Int
-    ) async throws -> MetinAddUserResult {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.addUser(
-                emailAddress: emailAddress,
-                commonName: commonName,
-                organizationUnitName: organizationUnitName,
-                organizationName: organizationName,
-                streetAddress: streetAddress,
-                localityName: localityName,
-                stateOrProvinceName: stateOrProvinceName,
-                countryName: countryName,
-                pinfl: pinfl,
-                inn: inn,
-                phoneNumber: phoneNumber,
-                otp: otp
-            ) { result in
-                switch result {
-                case .success(let r): continuation.resume(returning: r)
-                case .failure(let error): continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinAddUserError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .invalidArgument(let reason):
+                return .providerConfigurationError(reason: reason)
+            case .serverResponse:
+                return .invalidServerResponse
+            case .userExist:
+                return .providerConfigurationError(
+                    reason: "Foydalanuvchi allaqachon mavjud"
+                )
+            case .userNotValidate(let reason):
+                return .providerConfigurationError(
+                    reason: "Foydalanuvchi tasdiqlanmagan: \(reason)"
+                )
+            case .wrongOtpCode:
+                return .invalidPin
+            case .httpError(let reason):
+                return .networkError(reason: "HTTP xato: \(reason)")
+            case .networkError(let reason):
+                return .networkError(reason: reason)
             }
         }
     }
 
-    /// Sertifikat qo'shish (userId kerak — `addUser` dan olinadi)
-    public func addCertificate(
-        userId: String,
-        emailAddress: String,
-        commonName: String,
-        organizationUnitName: String,
-        organizationName: String,
-        streetAddress: String,
-        localityName: String,
-        stateOrProvinceName: String,
-        countryName: Country,
-        pinfl: String? = nil,
-        inn: String? = nil,
-        pinCode: String,
-        surName: String = ""
-    ) async throws -> MetinAddCertificateResult {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.addCertificate(
-                userId: userId,
-                emailAddress: emailAddress,
-                commonName: commonName,
-                organizationUnitName: organizationUnitName,
-                organizationName: organizationName,
-                streetAddress: streetAddress,
-                localityName: localityName,
-                stateOrProvinceName: stateOrProvinceName,
-                countryName: countryName,
-                pinfl: pinfl,
-                inn: inn,
-                pinCode: pinCode,
-                surName: surName
-            ) { result in
-                switch result {
-                case .success(let r): continuation.resume(returning: r)
-                case .failure(let error): continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinAddCertificateError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .invalidArgument(let reason):
+                return .providerConfigurationError(reason: reason)
+            case .serverResponse:
+                return .invalidServerResponse
+            case .httpError(let reason):
+                return .networkError(reason: "HTTP xato: \(reason)")
+            case .userNotValidate(let reason):
+                return .providerConfigurationError(
+                    reason: "Foydalanuvchi tasdiqlanmagan: \(reason)"
+                )
+            case .networkError(let reason):
+                return .networkError(reason: reason)
+            case .csrError:
+                return .invalidCertificateFormat
+            case .deviceLimit(let reason):
+                return .providerConfigurationError(
+                    reason: "Qurilma limiti: \(reason)"
+                )
             }
         }
     }
 
-    /// Sertifikat ma'lumotlarini serverdan olish
-    public func getCertificate(serialNumber: String) async throws -> MetinCertificate {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            sdk.getCertificate(serialNumber: serialNumber) { result in
-                switch result {
-                case .success(let cert): continuation.resume(returning: cert)
-                case .failure(let error): continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinGetCertificateError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .certificateExpired(_, _, let notAfter):
+                let expiry =
+                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                return .certificateExpired(expiryDate: expiry)
+            case .certificateNotFound:
+                return .certificateNotFound
+            case .certificateRevoked:
+                return .certificateRevoked(reason: .unspecified)
+            case .httpError(let reason):
+                return .networkError(reason: "HTTP xato: \(reason)")
+            case .networkError(let reason):
+                return .networkError(reason: reason)
             }
         }
     }
 
-    /// PIN o'zgartirish
-    public func changePin(
-        currentPin: String,
-        newPin: String,
-        serialNumber: String
-    ) async throws {
-        guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            sdk.changePin(currentPin: currentPin, newPin: newPin, serialNumber: serialNumber) { result in
-                switch result {
-                case .success: continuation.resume()
-                case .failure(let error): continuation.resume(throwing: error.toMuhrError())
-                }
+    extension MetinChangePinError {
+        fileprivate func toMuhrError() -> MuhrError {
+            switch self {
+            case .invalidArgument(let reason):
+                return .providerConfigurationError(reason: reason)
+            case .pinCodeMismatch:
+                return .invalidPin
             }
         }
     }
 
-    // MARK: - Private Helpers
-
-    private func requestPin() async throws -> String {
-        return try await withCheckedThrowingContinuation { continuation in
-            delegate?.providerRequiresPin(self) { pin in
-                if let pin {
-                    continuation.resume(returning: pin)
-                } else {
-                    continuation.resume(throwing: MuhrError.userCancelled)
-                }
-            }
-        }
-    }
-
-    private func sha256(_ data: Data) -> Data {
-        var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-        data.withUnsafeBytes {
-            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &digest)
-        }
-        return Data(digest)
-    }
-}
-
-// MARK: - MetinSDK Error → MuhrError
-
-private extension MetinSignError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .pinCodeMismatch:
-            return .invalidPin
-        case .certificateExpired(_, _, let notAfter):
-            let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
-            return .certificateExpired(expiryDate: expiry)
-        case .invalidCertificate:
-            return .invalidCertificateFormat
-        case .signingFailed(let reason):
-            return .signingFailed(reason: reason)
-        case .innOrPinflMismatch(let reason):
-            return .providerConfigurationError(reason: "INN/PINFL mos kelmadi: \(reason)")
-        }
-    }
-}
-
-private extension MetinSignCmsError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .pinCodeMismatch:
-            return .invalidPin
-        case .certificateExpired(_, _, let notAfter):
-            let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
-            return .certificateExpired(expiryDate: expiry)
-        case .invalidCertificate:
-            return .invalidCertificateFormat
-        case .signingFailed(let reason):
-            return .signingFailed(reason: reason)
-        case .alreadyExistSigner(let reason):
-            return .signingFailed(reason: "Bu sertifikat allaqachon imzo qo'ygan: \(reason)")
-        case .invalidCms:
-            return .invalidSignatureFormat
-        case .innOrPinflMismatch(let reason):
-            return .providerConfigurationError(reason: "INN/PINFL mos kelmadi: \(reason)")
-        }
-    }
-}
-
-private extension MetinCmsVerifyError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .serverResponse:
-            return .invalidServerResponse
-        case .httpError(let reason):
-            return .networkError(reason: "HTTP xato: \(reason)")
-        case .networkError(let reason):
-            return .networkError(reason: reason)
-        }
-    }
-}
-
-private extension MetinGenerateOtpError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .serverResponse:
-            return .invalidServerResponse
-        case .httpError(let reason):
-            return .networkError(reason: "HTTP xato: \(reason)")
-        case .networkError(let reason):
-            return .networkError(reason: reason)
-        }
-    }
-}
-
-private extension MetinGetUserError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .invalidArgument(let reason):
-            return .providerConfigurationError(reason: reason)
-        case .serverResponse:
-            return .invalidServerResponse
-        case .userNotFound:
-            return .certificateNotFound
-        case .wrongOtpCode:
-            return .invalidPin
-        case .httpError(let reason):
-            return .networkError(reason: "HTTP xato: \(reason)")
-        case .networkError(let reason):
-            return .networkError(reason: reason)
-        }
-    }
-}
-
-private extension MetinAddUserError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .invalidArgument(let reason):
-            return .providerConfigurationError(reason: reason)
-        case .serverResponse:
-            return .invalidServerResponse
-        case .userExist:
-            return .providerConfigurationError(reason: "Foydalanuvchi allaqachon mavjud")
-        case .userNotValidate(let reason):
-            return .providerConfigurationError(reason: "Foydalanuvchi tasdiqlanmagan: \(reason)")
-        case .wrongOtpCode:
-            return .invalidPin
-        case .httpError(let reason):
-            return .networkError(reason: "HTTP xato: \(reason)")
-        case .networkError(let reason):
-            return .networkError(reason: reason)
-        }
-    }
-}
-
-private extension MetinAddCertificateError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .invalidArgument(let reason):
-            return .providerConfigurationError(reason: reason)
-        case .serverResponse:
-            return .invalidServerResponse
-        case .httpError(let reason):
-            return .networkError(reason: "HTTP xato: \(reason)")
-        case .userNotValidate(let reason):
-            return .providerConfigurationError(reason: "Foydalanuvchi tasdiqlanmagan: \(reason)")
-        case .networkError(let reason):
-            return .networkError(reason: reason)
-        case .csrError:
-            return .invalidCertificateFormat
-        case .deviceLimit(let reason):
-            return .providerConfigurationError(reason: "Qurilma limiti: \(reason)")
-        }
-    }
-}
-
-private extension MetinGetCertificateError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .certificateExpired(_, _, let notAfter):
-            let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
-            return .certificateExpired(expiryDate: expiry)
-        case .certificateNotFound:
-            return .certificateNotFound
-        case .certificateRevoked:
-            return .certificateRevoked(reason: .unspecified)
-        case .httpError(let reason):
-            return .networkError(reason: "HTTP xato: \(reason)")
-        case .networkError(let reason):
-            return .networkError(reason: reason)
-        }
-    }
-}
-
-private extension MetinChangePinError {
-    func toMuhrError() -> MuhrError {
-        switch self {
-        case .invalidArgument(let reason):
-            return .providerConfigurationError(reason: reason)
-        case .pinCodeMismatch:
-            return .invalidPin
-        }
-    }
-}
-
-#endif // canImport(MetinSDK)
+#endif  // canImport(MetinSDK)
