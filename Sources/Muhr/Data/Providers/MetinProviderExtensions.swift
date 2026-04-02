@@ -163,7 +163,7 @@ extension CertificateInfo {
             issuerName: "Metin",
             validFrom: Date(),
             validTo: Date.distantFuture,
-            algorithm: .rsaSha1,
+            algorithm: .rsaSHA256,
             keySize: 2048,
             secCertificate: placeholderSecCertificate(),
             privateKeyRef: nil
