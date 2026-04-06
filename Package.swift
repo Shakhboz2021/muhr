@@ -4,15 +4,8 @@ import PackageDescription
 
 // MARK: - MetinSDK dependency
 //
-// Hozir: local xcframework (Frameworks/MetinSDK.xcframework)
-//
-// Kelajakda remote repodan olish uchun quyidagicha o'zgartiring:
-//
-//   .binaryTarget(
-//       name: "MetinSDK",
-//       url: "https://your-cdn.com/MetinSDK-1.1.5.xcframework.zip",
-//       checksum: "<sha256 checksum>"
-//   )
+// Remote: https://github.com/AzizParpiyev/MetinSDK (branch: mkbank, MetinSDK-iOS/)
+// Version: v1.1.7
 //
 
 let package = Package(
@@ -31,10 +24,11 @@ let package = Package(
     ],
 
     targets: [
-        // MARK: - MetinSDK (local binary, iOS only, kelajakda remote)
+        // MARK: - MetinSDK (remote binary, iOS only)
         .binaryTarget(
             name: "MetinSDK",
-            path: "Frameworks/MetinSDK.xcframework"
+            url: "https://github.com/AzizParpiyev/MetinSDK/raw/mkbank/MetinSDK-iOS/MetinSDK.xcframework_v1.1.7.zip",
+            checksum: "04d2e74f5b98a282ad4ea2a442edbf9d6e4e28f3dc431f5880b6050d03594ea6"
         ),
 
         // MARK: - Muhr (iOS + macOS)
