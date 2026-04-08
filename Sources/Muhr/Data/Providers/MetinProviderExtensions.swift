@@ -21,11 +21,8 @@ import Foundation
 /// // AppDelegate yoki app launch da:
 /// try await Muhr.metin.initialize(baseUrl: "https://api.metin.uz")
 ///
-/// // Ro'yxatdan o'tish:
-/// let otp = try await Muhr.metin.generateOTP(pinfl: "12345678901234", phone: "+998901234567", otpToken: "token")
-/// let user = try await Muhr.metin.getUser(pinfl: "12345678901234", phone: "+998901234567", otp: otp)
-/// let addResult = try await Muhr.metin.addUser(...)
-/// let certResult = try await Muhr.metin.addCertificate(userId: addResult.userId, pinCode: "123456", ...)
+/// // Sertifikat qo'shish:
+/// let certResult = try await Muhr.metin.addCertificate(userId: userId, pinCode: "123456", ...)
 ///
 /// // Imzolash:
 /// let result = try await Muhr.metin.sign(data: doc, serialNumber: certResult.serialNumber, pinCode: "123456")

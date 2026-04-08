@@ -35,7 +35,7 @@
     /// )
     /// try await provider.initialize()
     ///
-    /// // OTP → getUser → addUser → addCertificate → sign
+    /// // addCertificate → sign
     /// ```
     ///
     /// ## Xavfsizlik modeli:
@@ -113,7 +113,7 @@
         }
 
         /// Metin da "import" to'g'ridan-to'g'ri ishlamaydi.
-        /// Ro'yxatdan o'tish uchun `generateOTP` → `addUser` → `addCertificate` ketma-ketligini ishlating.
+        /// Sertifikat qo'shish uchun `addCertificate` metodidan foydalaning.
         public func importCertificate(
             data: Data,
             password pinCode: String,
@@ -297,101 +297,7 @@
 
         // MARK: - Registration Flow
 
-        /// OTP generatsiya qilish — ro'yxatdan o'tishning birinchi qadami
-        ///
-        /// - Parameters:
-        ///   - pinfl: PINFL (14 raqam), jismoniy shaxs uchun
-        ///   - inn: INN/STIR (9 raqam), yuridik shaxs uchun
-        ///   - phone: Telefon raqami ("+998XXXXXXXXX")
-        ///   - otpToken: OTP token
-        public func generateOTP(
-            pinfl: String? = nil,
-            inn: String? = nil,
-            phone: String,
-            otpToken: String
-        ) async throws -> Int {
-            guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-            return try await withCheckedThrowingContinuation { continuation in
-                sdk.generateOtp(
-                    pinfl: pinfl,
-                    inn: inn,
-                    phone: phone,
-                    otpToken: otpToken
-                ) { result in
-                    switch result {
-                    case .success(let otp): continuation.resume(returning: otp)
-                    case .failure(let error):
-                        continuation.resume(throwing: error.toMuhrError())
-                    }
-                }
-            }
-        }
-
-        /// Foydalanuvchi ma'lumotlarini olish
-        public func getUser(
-            pinfl: String? = nil,
-            inn: String? = nil,
-            phone: String,
-            otp: Int
-        ) async throws -> MetinUser {
-            guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-            return try await withCheckedThrowingContinuation { continuation in
-                sdk.getUser(pinfl: pinfl, inn: inn, phone: phone, otp: otp) {
-                    result in
-                    switch result {
-                    case .success(let user):
-                        continuation.resume(returning: user)
-                    case .failure(let error):
-                        continuation.resume(throwing: error.toMuhrError())
-                    }
-                }
-            }
-        }
-
-        /// Yangi foydalanuvchi qo'shish
-        public func addUser(
-            emailAddress: String,
-            commonName: String,
-            organizationUnitName: String,
-            organizationName: String,
-            streetAddress: String,
-            localityName: String,
-            stateOrProvinceName: String,
-            countryName: Country,
-            pinfl: String? = nil,
-            inn: String? = nil,
-            phoneNumber: String,
-            otp: Int
-        ) async throws -> MetinAddUserResult {
-            guard isInitialized else { throw MuhrError.providerNotInitialized }
-
-            return try await withCheckedThrowingContinuation { continuation in
-                sdk.addUser(
-                    emailAddress: emailAddress,
-                    commonName: commonName,
-                    organizationUnitName: organizationUnitName,
-                    organizationName: organizationName,
-                    streetAddress: streetAddress,
-                    localityName: localityName,
-                    stateOrProvinceName: stateOrProvinceName,
-                    countryName: countryName,
-                    pinfl: pinfl,
-                    inn: inn,
-                    phoneNumber: phoneNumber,
-                    otp: otp
-                ) { result in
-                    switch result {
-                    case .success(let r): continuation.resume(returning: r)
-                    case .failure(let error):
-                        continuation.resume(throwing: error.toMuhrError())
-                    }
-                }
-            }
-        }
-
-        /// Sertifikat qo'shish (userId kerak — `addUser` dan olinadi)
+        /// Sertifikat qo'shish
         public func addCertificate(
             userId: String,
             emailAddress: String,
@@ -513,6 +419,8 @@
                 let expiry =
                     ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
+            case .certificateRevoked:
+                return .certificateRevoked(reason: .unspecified)
             case .invalidCertificate:
                 return .invalidCertificateFormat
             case .signingFailed(let reason):
@@ -534,6 +442,8 @@
                 let expiry =
                     ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
+            case .certificateRevoked:
+                return .certificateRevoked(reason: .unspecified)
             case .invalidCertificate:
                 return .invalidCertificateFormat
             case .signingFailed(let reason):
@@ -565,69 +475,12 @@
         }
     }
 
-    extension MetinGenerateOtpError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .serverResponse:
-                return .invalidServerResponse
-            case .httpError(let reason):
-                return .networkError(reason: "HTTP xato: \(reason)")
-            case .networkError(let reason):
-                return .networkError(reason: reason)
-            }
-        }
-    }
-
-    extension MetinGetUserError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .invalidArgument(let reason):
-                return .providerConfigurationError(reason: reason)
-            case .serverResponse:
-                return .invalidServerResponse
-            case .userNotFound:
-                return .certificateNotFound
-            case .wrongOtpCode:
-                return .invalidPin
-            case .httpError(let reason):
-                return .networkError(reason: "HTTP xato: \(reason)")
-            case .networkError(let reason):
-                return .networkError(reason: reason)
-            }
-        }
-    }
-
-    extension MetinAddUserError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .invalidArgument(let reason):
-                return .providerConfigurationError(reason: reason)
-            case .serverResponse:
-                return .invalidServerResponse
-            case .userExist:
-                return .providerConfigurationError(
-                    reason: "Foydalanuvchi allaqachon mavjud"
-                )
-            case .userNotValidate(let reason):
-                return .providerConfigurationError(
-                    reason: "Foydalanuvchi tasdiqlanmagan: \(reason)"
-                )
-            case .wrongOtpCode:
-                return .invalidPin
-            case .httpError(let reason):
-                return .networkError(reason: "HTTP xato: \(reason)")
-            case .networkError(let reason):
-                return .networkError(reason: reason)
-            }
-        }
-    }
-
     extension MetinAddCertificateError {
         fileprivate func toMuhrError() -> MuhrError {
             switch self {
             case .invalidArgument(let reason):
                 return .providerConfigurationError(reason: reason)
-            case .serverResponse:
+            case .serverResponse(_):
                 return .invalidServerResponse
             case .httpError(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
@@ -637,7 +490,7 @@
                 )
             case .networkError(let reason):
                 return .networkError(reason: reason)
-            case .csrError:
+            case .csrError(_):
                 return .invalidCertificateFormat
             case .deviceLimit(let reason):
                 return .providerConfigurationError(
@@ -654,9 +507,9 @@
                 let expiry =
                     ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
-            case .certificateNotFound:
+            case .certificateNotFound(_):
                 return .certificateNotFound
-            case .certificateRevoked:
+            case .certificateRevoked(_):
                 return .certificateRevoked(reason: .unspecified)
             case .httpError(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
@@ -673,6 +526,8 @@
                 return .providerConfigurationError(reason: reason)
             case .pinCodeMismatch:
                 return .invalidPin
+            case .certificateRevoked:
+                return .certificateRevoked(reason: .unspecified)
             }
         }
     }
