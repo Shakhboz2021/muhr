@@ -205,7 +205,36 @@
 
         // MARK: - CMS Signing
 
-        /// Mavjud CMS ga Metin imzosini qo'shish
+        /// Mavjud CMS ga Metin imzosini qo'shish (serialNumber bilan)
+        ///
+        /// - Parameters:
+        ///   - cms: Mavjud CMS string (bo'sh string = yangi CMS)
+        ///   - pinCode: PIN kod
+        ///   - serialNumber: Sertifikat serial raqami
+        public func signCMS(
+            cms: String,
+            pinCode: String,
+            serialNumber: String
+        ) async throws -> String {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.signCMS(
+                    pinCode: pinCode,
+                    cms: cms,
+                    serialNumber: serialNumber
+                ) { result in
+                    switch result {
+                    case .success(let signedCMS):
+                        continuation.resume(returning: signedCMS)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Mavjud CMS ga Metin imzosini qo'shish (CertificateInfo bilan)
         ///
         /// - Parameters:
         ///   - cms: Mavjud CMS string (bo'sh string = yangi CMS)
