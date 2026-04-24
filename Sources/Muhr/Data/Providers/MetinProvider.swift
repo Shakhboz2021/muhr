@@ -136,6 +136,10 @@
             }
         }
 
+        public func deleteCertificate(pinfl: String?, inn: String?) async {
+            sdk.deleteCertificate(pinfl: pinfl, inn: inn)
+        }
+
         // MARK: - Signing
 
         /// PIN kod va sertifikat bilan imzolash
@@ -324,9 +328,15 @@
             self.delegate = delegate
         }
 
+        // MARK: - Info
+
+        public func getVersion() -> String {
+            sdk.getVersion()
+        }
+
         // MARK: - Registration Flow
 
-        /// Sertifikat qo'shish
+        /// Sertifikat qo'shish (userId bilan)
         public func addCertificate(
             userId: String,
             emailAddress: String,
@@ -369,23 +379,192 @@
             }
         }
 
-        /// Sertifikat ma'lumotlarini serverdan olish
-        public func getCertificate(serialNumber: String) async throws
-            -> MetinCertificate
-        {
+        /// Sertifikat qo'shish (userId + dboUserId bilan)
+        public func addCertificate(
+            userId: String,
+            dboUserId: String,
+            emailAddress: String,
+            commonName: String,
+            organizationUnitName: String,
+            organizationName: String,
+            streetAddress: String,
+            localityName: String,
+            stateOrProvinceName: String,
+            countryName: Country,
+            pinfl: String? = nil,
+            inn: String? = nil,
+            pinCode: String,
+            surName: String = ""
+        ) async throws -> MetinAddCertificateResult {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.getCertificate(serialNumber: serialNumber) { result in
+                sdk.addCertificate(
+                    userId: userId,
+                    dboUserId: dboUserId,
+                    emailAddress: emailAddress,
+                    commonName: commonName,
+                    organizationUnitName: organizationUnitName,
+                    organizationName: organizationName,
+                    streetAddress: streetAddress,
+                    localityName: localityName,
+                    stateOrProvinceName: stateOrProvinceName,
+                    countryName: countryName,
+                    pinfl: pinfl,
+                    inn: inn,
+                    pinCode: pinCode,
+                    surName: surName
+                ) { result in
                     switch result {
-                    case .success(let cert):
-                        continuation.resume(returning: cert)
+                    case .success(let r): continuation.resume(returning: r)
                     case .failure(let error):
                         continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
         }
+
+        // MARK: - Get Certificate
+
+        /// Sertifikatni serialNumber bilan olish
+        public func getCertificate(serialNumber: String) async throws -> MetinCertificate {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.getCertificate(serialNumber: serialNumber) { result in
+                    switch result {
+                    case .success(let cert): continuation.resume(returning: cert)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Sertifikatni pinfl/inn bilan olish
+        public func getCertificate(pinfl: String?, inn: String?) async throws -> MetinCertificate {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.getCertificate(pinfl: pinfl, inn: inn) { result in
+                    switch result {
+                    case .success(let cert): continuation.resume(returning: cert)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Sertifikatni dboUserId bilan olish
+        public func getCertificate(dboUserId: String) async throws -> MetinCertificate {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.getCertificate(dboUserId: dboUserId) { result in
+                    switch result {
+                    case .success(let cert): continuation.resume(returning: cert)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        // MARK: - Delete Certificate
+
+        /// Sertifikatni serialNumber bilan o'chirish
+        public func deleteCertificate(serialNumber: String) async {
+            sdk.deleteCertificate(serialNumber: serialNumber)
+        }
+
+        /// Sertifikatni dboUserId bilan o'chirish
+        public func deleteCertificate(dboUserId: String) async {
+            sdk.deleteCertificate(dboUserId: dboUserId)
+        }
+
+        /// Barcha sertifikatlarni tozalash
+        public func clearCertificates() async {
+            sdk.clearCertificates()
+        }
+
+        // MARK: - Sign (batch)
+
+        /// Bir nechta xabarni serialNumber bilan imzolash
+        public func sign(
+            pinCode: String,
+            messages: [String],
+            serialNumber: String
+        ) async throws -> [String] {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.sign(pinCode: pinCode, messages: messages, serialNumber: serialNumber) { result in
+                    switch result {
+                    case .success(let signatures): continuation.resume(returning: signatures)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Bitta xabarni pinfl/inn bilan imzolash
+        public func sign(
+            pinCode: String,
+            message: String,
+            pinfl: String?,
+            inn: String?
+        ) async throws -> String {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.sign(pinCode: pinCode, message: message, pinfl: pinfl, inn: inn) { result in
+                    switch result {
+                    case .success(let signature): continuation.resume(returning: signature)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        /// Bir nechta xabarni pinfl/inn bilan imzolash
+        public func sign(
+            pinCode: String,
+            messages: [String],
+            pinfl: String?,
+            inn: String?
+        ) async throws -> [String] {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.sign(pinCode: pinCode, messages: messages, pinfl: pinfl, inn: inn) { result in
+                    switch result {
+                    case .success(let signatures): continuation.resume(returning: signatures)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        // MARK: - Sign CMS (pinfl/inn)
+
+        /// CMS ni pinfl/inn bilan imzolash
+        public func signCMS(
+            cms: String,
+            pinCode: String,
+            pinfl: String?,
+            inn: String?
+        ) async throws -> String {
+            guard isInitialized else { throw MuhrError.providerNotInitialized }
+
+            return try await withCheckedThrowingContinuation { continuation in
+                sdk.signCMS(pinCode: pinCode, cms: cms, pinfl: pinfl, inn: inn) { result in
+                    switch result {
+                    case .success(let signedCMS): continuation.resume(returning: signedCMS)
+                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    }
+                }
+            }
+        }
+
+        // MARK: - Change PIN
 
         /// PIN o'zgartirish
         public func changePin(
