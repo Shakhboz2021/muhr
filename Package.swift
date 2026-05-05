@@ -5,7 +5,7 @@ import PackageDescription
 // MARK: - MetinSDK dependency
 //
 // Remote: https://github.com/AzizParpiyev/MetinSDK (branch: mkbank, MetinSDK-iOS/)
-// Version: v1.1.7
+// Version: v1.1.8
 //
 
 let package = Package(
@@ -27,8 +27,8 @@ let package = Package(
         // MARK: - MetinSDK (remote binary, iOS only)
         .binaryTarget(
             name: "MetinSDK",
-            url: "https://github.com/AzizParpiyev/MetinSDK/raw/mkbank/MetinSDK-iOS/MetinSDK.xcframework_v1.1.7.zip",
-            checksum: "04d2e74f5b98a282ad4ea2a442edbf9d6e4e28f3dc431f5880b6050d03594ea6"
+            url: "https://github.com/AzizParpiyev/MetinSDK/releases/download/v1.1.8/MetinSDK.xcframework_v1.1.8.zip",
+            checksum: "c5771847a96db008c9c80efc6b6c1c83169d8c65930f21460bf37c738245bf7e"
         ),
 
         // MARK: - Muhr (iOS + macOS)
