@@ -136,8 +136,8 @@
             }
         }
 
-        public func deleteCertificate(pinfl: String?, inn: String?) async {
-            sdk.deleteCertificate(pinfl: pinfl, inn: inn)
+        public func deleteCertificate(pinfl: String?, inn: String?, headers: [String: String] = [:]) async {
+            sdk.deleteCertificate(pinfl: pinfl, inn: inn, headers: headers)
         }
 
         // MARK: - Signing
@@ -218,7 +218,8 @@
         public func signCMS(
             cms: String,
             pinCode: String,
-            serialNumber: String
+            serialNumber: String,
+            headers: [String: String] = [:]
         ) async throws -> String {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -226,7 +227,8 @@
                 sdk.signCMS(
                     pinCode: pinCode,
                     cms: cms,
-                    serialNumber: serialNumber
+                    serialNumber: serialNumber,
+                    headers: headers
                 ) { result in
                     switch result {
                     case .success(let signedCMS):
@@ -247,7 +249,8 @@
         public func signCMS(
             cms: String,
             pinCode: String,
-            certificate: CertificateInfo
+            certificate: CertificateInfo,
+            headers: [String: String] = [:]
         ) async throws -> String {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -255,7 +258,8 @@
                 sdk.signCMS(
                     pinCode: pinCode,
                     cms: cms,
-                    serialNumber: certificate.serialNumber
+                    serialNumber: certificate.serialNumber,
+                    headers: headers
                 ) { result in
                     switch result {
                     case .success(let signedCMS):
@@ -280,12 +284,12 @@
         }
 
         /// CMS string ni Metin server orqali tekshirish
-        public func verifyCMS(_ cms: String) async throws -> VerificationResult
+        public func verifyCMS(_ cms: String, headers: [String: String] = [:]) async throws -> VerificationResult
         {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.verify(cms: cms) { result in
+                sdk.verify(cms: cms, headers: headers) { result in
                     switch result {
                     case .success(let metinResult):
                         let verResult = VerificationResult(
@@ -350,7 +354,8 @@
             pinfl: String? = nil,
             inn: String? = nil,
             pinCode: String,
-            surName: String = ""
+            surName: String = "",
+            headers: [String: String] = [:]
         ) async throws -> MetinAddCertificateResult {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -368,7 +373,8 @@
                     pinfl: pinfl,
                     inn: inn,
                     pinCode: pinCode,
-                    surName: surName
+                    surName: surName,
+                    headers: headers
                 ) { result in
                     switch result {
                     case .success(let r): continuation.resume(returning: r)
@@ -394,7 +400,8 @@
             pinfl: String? = nil,
             inn: String? = nil,
             pinCode: String,
-            surName: String = ""
+            surName: String = "",
+            headers: [String: String] = [:]
         ) async throws -> MetinAddCertificateResult {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -413,7 +420,8 @@
                     pinfl: pinfl,
                     inn: inn,
                     pinCode: pinCode,
-                    surName: surName
+                    surName: surName,
+                    headers: headers
                 ) { result in
                     switch result {
                     case .success(let r): continuation.resume(returning: r)
@@ -471,18 +479,18 @@
         // MARK: - Delete Certificate
 
         /// Sertifikatni serialNumber bilan o'chirish
-        public func deleteCertificate(serialNumber: String) async {
-            sdk.deleteCertificate(serialNumber: serialNumber)
+        public func deleteCertificate(serialNumber: String, headers: [String: String] = [:]) async {
+            sdk.deleteCertificate(serialNumber: serialNumber, headers: headers)
         }
 
         /// Sertifikatni dboUserId bilan o'chirish
-        public func deleteCertificate(dboUserId: String) async {
-            sdk.deleteCertificate(dboUserId: dboUserId)
+        public func deleteCertificate(dboUserId: String, headers: [String: String] = [:]) async {
+            sdk.deleteCertificate(dboUserId: dboUserId, headers: headers)
         }
 
         /// Barcha sertifikatlarni tozalash
-        public func clearCertificates() async {
-            sdk.clearCertificates()
+        public func clearCertificates(headers: [String: String] = [:]) async {
+            sdk.clearCertificates(headers: headers)
         }
 
         // MARK: - Sign (batch)
@@ -491,12 +499,13 @@
         public func sign(
             pinCode: String,
             messages: [String],
-            serialNumber: String
+            serialNumber: String,
+            headers: [String: String] = [:]
         ) async throws -> [String] {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.sign(pinCode: pinCode, messages: messages, serialNumber: serialNumber) { result in
+                sdk.sign(pinCode: pinCode, messages: messages, serialNumber: serialNumber, headers: headers) { result in
                     switch result {
                     case .success(let signatures): continuation.resume(returning: signatures)
                     case .failure(let error): continuation.resume(throwing: error.toMuhrError())
@@ -510,12 +519,13 @@
             pinCode: String,
             message: String,
             pinfl: String?,
-            inn: String?
+            inn: String?,
+            headers: [String: String] = [:]
         ) async throws -> String {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.sign(pinCode: pinCode, message: message, pinfl: pinfl, inn: inn) { result in
+                sdk.sign(pinCode: pinCode, message: message, pinfl: pinfl, inn: inn, headers: headers) { result in
                     switch result {
                     case .success(let signature): continuation.resume(returning: signature)
                     case .failure(let error): continuation.resume(throwing: error.toMuhrError())
@@ -529,12 +539,13 @@
             pinCode: String,
             messages: [String],
             pinfl: String?,
-            inn: String?
+            inn: String?,
+            headers: [String: String] = [:]
         ) async throws -> [String] {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.sign(pinCode: pinCode, messages: messages, pinfl: pinfl, inn: inn) { result in
+                sdk.sign(pinCode: pinCode, messages: messages, pinfl: pinfl, inn: inn, headers: headers) { result in
                     switch result {
                     case .success(let signatures): continuation.resume(returning: signatures)
                     case .failure(let error): continuation.resume(throwing: error.toMuhrError())
@@ -550,12 +561,13 @@
             cms: String,
             pinCode: String,
             pinfl: String?,
-            inn: String?
+            inn: String?,
+            headers: [String: String] = [:]
         ) async throws -> String {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.signCMS(pinCode: pinCode, cms: cms, pinfl: pinfl, inn: inn) { result in
+                sdk.signCMS(pinCode: pinCode, cms: cms, pinfl: pinfl, inn: inn, headers: headers) { result in
                     switch result {
                     case .success(let signedCMS): continuation.resume(returning: signedCMS)
                     case .failure(let error): continuation.resume(throwing: error.toMuhrError())
@@ -570,7 +582,8 @@
         public func changePin(
             currentPin: String,
             newPin: String,
-            serialNumber: String
+            serialNumber: String,
+            headers: [String: String] = [:]
         ) async throws {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -579,7 +592,8 @@
                 sdk.changePin(
                     currentPin: currentPin,
                     newPin: newPin,
-                    serialNumber: serialNumber
+                    serialNumber: serialNumber,
+                    headers: headers
                 ) { result in
                     switch result {
                     case .success: continuation.resume()
