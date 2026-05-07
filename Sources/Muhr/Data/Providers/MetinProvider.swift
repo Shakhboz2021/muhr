@@ -350,8 +350,7 @@
             pinfl: String? = nil,
             inn: String? = nil,
             pinCode: String,
-            surName: String = "",
-            headers: [String: String] = [:]
+            surName: String = ""
         ) async throws -> MetinAddCertificateResult {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -369,8 +368,7 @@
                     pinfl: pinfl,
                     inn: inn,
                     pinCode: pinCode,
-                    surName: surName,
-                    headers: headers
+                    surName: surName
                 ) { result in
                     switch result {
                     case .success(let r): continuation.resume(returning: r)
