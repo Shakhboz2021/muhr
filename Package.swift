@@ -5,7 +5,7 @@ import PackageDescription
 // MARK: - MetinSDK dependency
 //
 // Remote: https://github.com/AzizParpiyev/MetinSDK (branch: mkbank, MetinSDK-iOS/)
-// Version: v1.1.8
+// Version: v1.1.7
 //
 
 let package = Package(

@@ -136,8 +136,8 @@
             }
         }
 
-        public func deleteCertificate(pinfl: String?, inn: String?, headers: [String: String] = [:]) async {
-            sdk.deleteCertificate(pinfl: pinfl, inn: inn, headers: headers)
+        public func deleteCertificate(pinfl: String?, inn: String?) async {
+            sdk.deleteCertificate(pinfl: pinfl, inn: inn)
         }
 
         // MARK: - Signing
@@ -218,8 +218,7 @@
         public func signCMS(
             cms: String,
             pinCode: String,
-            serialNumber: String,
-            headers: [String: String] = [:]
+            serialNumber: String
         ) async throws -> String {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -227,8 +226,7 @@
                 sdk.signCMS(
                     pinCode: pinCode,
                     cms: cms,
-                    serialNumber: serialNumber,
-                    headers: headers
+                    serialNumber: serialNumber
                 ) { result in
                     switch result {
                     case .success(let signedCMS):
@@ -249,8 +247,7 @@
         public func signCMS(
             cms: String,
             pinCode: String,
-            certificate: CertificateInfo,
-            headers: [String: String] = [:]
+            certificate: CertificateInfo
         ) async throws -> String {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -258,8 +255,7 @@
                 sdk.signCMS(
                     pinCode: pinCode,
                     cms: cms,
-                    serialNumber: certificate.serialNumber,
-                    headers: headers
+                    serialNumber: certificate.serialNumber
                 ) { result in
                     switch result {
                     case .success(let signedCMS):
@@ -284,12 +280,12 @@
         }
 
         /// CMS string ni Metin server orqali tekshirish
-        public func verifyCMS(_ cms: String, headers: [String: String] = [:]) async throws -> VerificationResult
+        public func verifyCMS(_ cms: String) async throws -> VerificationResult
         {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.verify(cms: cms, headers: headers) { result in
+                sdk.verify(cms: cms) { result in
                     switch result {
                     case .success(let metinResult):
                         let verResult = VerificationResult(
@@ -479,18 +475,18 @@
         // MARK: - Delete Certificate
 
         /// Sertifikatni serialNumber bilan o'chirish
-        public func deleteCertificate(serialNumber: String, headers: [String: String] = [:]) async {
-            sdk.deleteCertificate(serialNumber: serialNumber, headers: headers)
+        public func deleteCertificate(serialNumber: String) async {
+            sdk.deleteCertificate(serialNumber: serialNumber)
         }
 
         /// Sertifikatni dboUserId bilan o'chirish
-        public func deleteCertificate(dboUserId: String, headers: [String: String] = [:]) async {
-            sdk.deleteCertificate(dboUserId: dboUserId, headers: headers)
+        public func deleteCertificate(dboUserId: String) async {
+            sdk.deleteCertificate(dboUserId: dboUserId)
         }
 
         /// Barcha sertifikatlarni tozalash
-        public func clearCertificates(headers: [String: String] = [:]) async {
-            sdk.clearCertificates(headers: headers)
+        public func clearCertificates() async {
+            sdk.clearCertificates()
         }
 
         // MARK: - Sign (batch)
@@ -582,8 +578,7 @@
         public func changePin(
             currentPin: String,
             newPin: String,
-            serialNumber: String,
-            headers: [String: String] = [:]
+            serialNumber: String
         ) async throws {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
@@ -592,8 +587,7 @@
                 sdk.changePin(
                     currentPin: currentPin,
                     newPin: newPin,
-                    serialNumber: serialNumber,
-                    headers: headers
+                    serialNumber: serialNumber
                 ) { result in
                     switch result {
                     case .success: continuation.resume()
