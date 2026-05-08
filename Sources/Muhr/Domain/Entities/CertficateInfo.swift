@@ -145,7 +145,8 @@ public struct CertificateInfo: Identifiable, Sendable {
 
     /// Security framework certificate reference
     /// Apple's Security.framework SecCertificate type
-    internal let secCertificate: SecCertificate
+    /// Metin provider uchun nil bo'lishi mumkin (SecCertificate ishlatilmaydi)
+    internal let secCertificate: SecCertificate?
 
     /// Private key reference (Keychain'dan)
     ///
@@ -210,7 +211,7 @@ public struct CertificateInfo: Identifiable, Sendable {
         validTo: Date,
         algorithm: SignatureAlgorithm,
         keySize: Int,
-        secCertificate: SecCertificate,
+        secCertificate: SecCertificate? = nil,
         privateKeyRef: SecKey?
     ) {
         self.id = id

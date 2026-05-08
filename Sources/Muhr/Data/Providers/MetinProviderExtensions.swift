@@ -147,6 +147,7 @@ extension MetinProvider {
 
 extension CertificateInfo {
     /// Metin provider uchun minimal CertificateInfo (faqat serialNumber kerak)
+    /// secCertificate ishlatilmaydi — nil beriladi
     static func metin(serialNumber: String) -> CertificateInfo {
         CertificateInfo(
             id: serialNumber,
@@ -162,15 +163,9 @@ extension CertificateInfo {
             validTo: Date.distantFuture,
             algorithm: .rsaSHA256,
             keySize: 2048,
-            secCertificate: placeholderSecCertificate(),
+            secCertificate: nil,
             privateKeyRef: nil
         )
-    }
-
-    /// Metin'da SecCertificate ishlatilmaydi — placeholder
-    private static func placeholderSecCertificate() -> SecCertificate {
-        let der = Data([0x30, 0x03, 0x02, 0x01, 0x00])
-        return SecCertificateCreateWithData(nil, der as CFData)!
     }
 }
 

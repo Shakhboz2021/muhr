@@ -119,8 +119,8 @@ public final class KeychainSigningRepository: SigningRepository,
 
         // Public key olish
         var publicKey: SecKey?
-        if #available(iOS 12.0, *) {
-            publicKey = SecCertificateCopyKey(cert.secCertificate)
+        if #available(iOS 12.0, *), let secCert = cert.secCertificate {
+            publicKey = SecCertificateCopyKey(secCert)
         }
 
         guard let pubKey = publicKey else {

@@ -273,7 +273,9 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
             return VerificationResult.failure(errors: [.certificateNotFound])
         }
 
-        let secCert = cert.secCertificate
+        guard let secCert = cert.secCertificate else {
+            return VerificationResult.failure(errors: [.invalidSignature])
+        }
 
         // Public key olish (password kerak emas)
         guard let publicKey = SecCertificateCopyKey(secCert) else {
