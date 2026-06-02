@@ -599,8 +599,11 @@
         // MARK: - Private Helpers
 
         private func requestPin() async throws -> String {
+            guard let delegate else {
+                throw MuhrError.pinRequired
+            }
             return try await withCheckedThrowingContinuation { continuation in
-                delegate?.providerRequiresPin(self) { pin in
+                delegate.providerRequiresPin(self) { pin in
                     if let pin {
                         continuation.resume(returning: pin)
                     } else {
@@ -630,8 +633,7 @@
             case .pinCodeMismatch:
                 return .invalidPin
             case .certificateExpired(_, _, let notAfter):
-                let expiry =
-                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
             case .certificateRevoked:
                 return .certificateRevoked(reason: .unspecified)
@@ -643,6 +645,8 @@
                 return .providerConfigurationError(
                     reason: "INN/PINFL mos kelmadi: \(reason)"
                 )
+            @unknown default:
+                return .signingFailed(reason: "Noma'lum imzolash xatosi")
             }
         }
     }
@@ -653,8 +657,7 @@
             case .pinCodeMismatch:
                 return .invalidPin
             case .certificateExpired(_, _, let notAfter):
-                let expiry =
-                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
             case .certificateRevoked:
                 return .certificateRevoked(reason: .unspecified)
@@ -672,6 +675,8 @@
                 return .providerConfigurationError(
                     reason: "INN/PINFL mos kelmadi: \(reason)"
                 )
+            @unknown default:
+                return .signingFailed(reason: "Noma'lum CMS imzolash xatosi")
             }
         }
     }
@@ -679,12 +684,14 @@
     extension MetinCmsVerifyError {
         fileprivate func toMuhrError() -> MuhrError {
             switch self {
-            case .serverResponse:
-                return .invalidServerResponse
+            case .serverResponse(let message):
+                return .networkError(reason: "Server javobi xatosi: \(message)")
             case .httpError(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
             case .networkError(let reason):
                 return .networkError(reason: reason)
+            @unknown default:
+                return .verificationFailed(reason: "Noma'lum tekshirish xatosi")
             }
         }
     }
@@ -694,8 +701,8 @@
             switch self {
             case .invalidArgument(let reason):
                 return .providerConfigurationError(reason: reason)
-            case .serverResponse(_):
-                return .invalidServerResponse
+            case .serverResponse(let response):
+                return .networkError(reason: "Server javobi xatosi: \(response)")
             case .httpError(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
             case .userNotValidate(let reason):
@@ -704,12 +711,12 @@
                 )
             case .networkError(let reason):
                 return .networkError(reason: reason)
-            case .csrError(_):
-                return .invalidCertificateFormat
+            case .csrError(let reason):
+                return .signingFailed(reason: "CSR yaratishda xato: \(reason)")
             case .deviceLimit(let reason):
-                return .providerConfigurationError(
-                    reason: "Qurilma limiti: \(reason)"
-                )
+                return .providerConfigurationError(reason: "Qurilma limiti oshdi: \(reason)")
+            @unknown default:
+                return .unknown(message: "Noma'lum sertifikat qo'shish xatosi")
             }
         }
     }
@@ -729,6 +736,8 @@
                 return .networkError(reason: "HTTP xato: \(reason)")
             case .networkError(let reason):
                 return .networkError(reason: reason)
+            @unknown default:
+                return .unknown(message: "Noma'lum sertifikat olish xatosi")
             }
         }
     }
@@ -738,10 +747,12 @@
             switch self {
             case .invalidArgument(let reason):
                 return .providerConfigurationError(reason: reason)
-            case .pinCodeMismatch:
-                return .invalidPin
-            case .certificateRevoked:
+            case .pinCodeMismatch(_, let triesPin):
+                return triesPin > 0 ? .invalidPin : .pinBlocked
+            case .certificateRevoked(_):
                 return .certificateRevoked(reason: .unspecified)
+            @unknown default:
+                return .unknown(message: "Noma'lum PIN o'zgartirish xatosi")
             }
         }
     }
