@@ -49,12 +49,12 @@ public enum MuhrError: Error, Sendable {
     case certificateNotYetValid(validFrom: Date)
 
     /// Sertifikat bekor qilingan
-    /// - Parameter reason: Bekor qilish sababi
-    case certificateRevoked(reason: RevocationReason)
+    /// - Parameter reason: Bekor qilish sababi (server tomonidan qaytarilgan xabar)
+    case certificateRevoked(reason: String)
 
     /// Sertifikat formati noto'g'ri
     /// DER/PEM parse qilishda xatolik
-    case invalidCertificateFormat
+    case invalidCertificateFormat(reason: String)
 
     /// Sertifikat paroli noto'g'ri
     /// PKCS#12 (.p12/.pfx) fayl uchun
@@ -159,7 +159,8 @@ public enum MuhrError: Error, Sendable {
     case pinRequired
 
     /// PIN kod noto'g'ri
-    case invalidPin
+    /// - Parameter triesRemaining: Qolgan urinishlar soni
+    case invalidPin(triesRemaining: Int)
 
     /// PIN kod bloklangan
     /// Ko'p marta noto'g'ri kiritilgan
@@ -215,9 +216,9 @@ extension MuhrError: LocalizedError {
             return
                 "Sertifikat hali kuchga kirmagan. Boshlanish: \(Self.formatDate(date))"
         case .certificateRevoked(let reason):
-            return "Sertifikat bekor qilingan: \(reason.description)"
-        case .invalidCertificateFormat:
-            return "Sertifikat formati noto'g'ri"
+            return "Sertifikat bekor qilingan: \(reason)"
+        case .invalidCertificateFormat(let reason):
+            return "Sertifikat formati noto'g'ri: \(reason)"
         case .invalidCertificatePassword:
             return "Sertifikat paroli noto'g'ri"
         case .invalidCertificateChain:
@@ -280,8 +281,10 @@ extension MuhrError: LocalizedError {
         // Authentication
         case .pinRequired:
             return "PIN kod kiritish talab qilinadi"
-        case .invalidPin:
-            return "PIN kod noto'g'ri"
+        case .invalidPin(let tries):
+            return tries > 0
+                ? "PIN kod noto'g'ri. Qolgan urinishlar: \(tries)"
+                : "PIN kod noto'g'ri"
         case .pinBlocked:
             return "PIN kod bloklangan. Administrator bilan bog'laning"
         case .biometricAuthFailed:
@@ -316,11 +319,11 @@ extension MuhrError: LocalizedError {
         switch self {
         case .certificateExpired:
             return "Sertifikat amal qilish muddati o'tgan"
-        case .certificateRevoked:
+        case .certificateRevoked(_):
             return "Sertifikat sertifikatsiya markazi tomonidan bekor qilingan"
         case .privateKeyAccessDenied:
             return "Keychain'dan maxfiy kalitni o'qish uchun ruxsat yo'q"
-        case .invalidPin:
+        case .invalidPin(_):
             return "Kiritilgan PIN kod mos kelmadi"
         case .pinBlocked:
             return "Ko'p marta noto'g'ri PIN kiritilgan"
@@ -337,13 +340,13 @@ extension MuhrError: LocalizedError {
             return "Sertifikat o'rnating yoki mavjud sertifikatni tanlang"
         case .certificateExpired:
             return "Yangi sertifikat oling va o'rnating"
-        case .certificateRevoked:
+        case .certificateRevoked(_):
             return "Sertifikatsiya markazi bilan bog'laning"
         case .invalidCertificatePassword:
             return "Parolni tekshirib, qaytadan urinib ko'ring"
         case .privateKeyAccessDenied:
             return "Ilovaga Keychain'ga kirish huquqi bering"
-        case .pinRequired, .invalidPin:
+        case .pinRequired, .invalidPin(_):
             return "To'g'ri PIN kodni kiriting"
         case .pinBlocked:
             return
@@ -370,7 +373,7 @@ extension MuhrError {
         case .certificateNotFound: return 1001
         case .certificateExpired: return 1002
         case .certificateNotYetValid: return 1003
-        case .certificateRevoked: return 1004
+        case .certificateRevoked(_): return 1004
         case .invalidCertificateFormat: return 1005
         case .invalidCertificatePassword: return 1006
         case .invalidCertificateChain: return 1007
@@ -410,7 +413,7 @@ extension MuhrError {
 
         // Authentication: 8xxx
         case .pinRequired: return 8001
-        case .invalidPin: return 8002
+        case .invalidPin(_): return 8002
         case .pinBlocked: return 8003
         case .biometricAuthFailed: return 8004
         case .userCancelled: return 8005

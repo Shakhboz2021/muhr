@@ -429,42 +429,54 @@
         // MARK: - Get Certificate
 
         /// Sertifikatni serialNumber bilan olish
-        public func getCertificate(serialNumber: String) async throws -> MetinCertificate {
+        public func getCertificate(serialNumber: String) async throws
+            -> MetinCertificate
+        {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
                 sdk.getCertificate(serialNumber: serialNumber) { result in
                     switch result {
-                    case .success(let cert): continuation.resume(returning: cert)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let cert):
+                        continuation.resume(returning: cert)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
         }
 
         /// Sertifikatni pinfl/inn bilan olish
-        public func getCertificate(pinfl: String?, inn: String?) async throws -> MetinCertificate {
+        public func getCertificate(pinfl: String?, inn: String?) async throws
+            -> MetinCertificate
+        {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
                 sdk.getCertificate(pinfl: pinfl, inn: inn) { result in
                     switch result {
-                    case .success(let cert): continuation.resume(returning: cert)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let cert):
+                        continuation.resume(returning: cert)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
         }
 
         /// Sertifikatni dboUserId bilan olish
-        public func getCertificate(dboUserId: String) async throws -> MetinCertificate {
+        public func getCertificate(dboUserId: String) async throws
+            -> MetinCertificate
+        {
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
                 sdk.getCertificate(dboUserId: dboUserId) { result in
                     switch result {
-                    case .success(let cert): continuation.resume(returning: cert)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let cert):
+                        continuation.resume(returning: cert)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
@@ -499,10 +511,17 @@
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.sign(pinCode: pinCode, messages: messages, serialNumber: serialNumber, headers: headers) { result in
+                sdk.sign(
+                    pinCode: pinCode,
+                    messages: messages,
+                    serialNumber: serialNumber,
+                    headers: headers
+                ) { result in
                     switch result {
-                    case .success(let signatures): continuation.resume(returning: signatures)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let signatures):
+                        continuation.resume(returning: signatures)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
@@ -519,10 +538,18 @@
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.sign(pinCode: pinCode, message: message, pinfl: pinfl, inn: inn, headers: headers) { result in
+                sdk.sign(
+                    pinCode: pinCode,
+                    message: message,
+                    pinfl: pinfl,
+                    inn: inn,
+                    headers: headers
+                ) { result in
                     switch result {
-                    case .success(let signature): continuation.resume(returning: signature)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let signature):
+                        continuation.resume(returning: signature)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
@@ -539,10 +566,18 @@
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.sign(pinCode: pinCode, messages: messages, pinfl: pinfl, inn: inn, headers: headers) { result in
+                sdk.sign(
+                    pinCode: pinCode,
+                    messages: messages,
+                    pinfl: pinfl,
+                    inn: inn,
+                    headers: headers
+                ) { result in
                     switch result {
-                    case .success(let signatures): continuation.resume(returning: signatures)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let signatures):
+                        continuation.resume(returning: signatures)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
@@ -561,10 +596,18 @@
             guard isInitialized else { throw MuhrError.providerNotInitialized }
 
             return try await withCheckedThrowingContinuation { continuation in
-                sdk.signCMS(pinCode: pinCode, cms: cms, pinfl: pinfl, inn: inn, headers: headers) { result in
+                sdk.signCMS(
+                    pinCode: pinCode,
+                    cms: cms,
+                    pinfl: pinfl,
+                    inn: inn,
+                    headers: headers
+                ) { result in
                     switch result {
-                    case .success(let signedCMS): continuation.resume(returning: signedCMS)
-                    case .failure(let error): continuation.resume(throwing: error.toMuhrError())
+                    case .success(let signedCMS):
+                        continuation.resume(returning: signedCMS)
+                    case .failure(let error):
+                        continuation.resume(throwing: error.toMuhrError())
                     }
                 }
             }
@@ -630,15 +673,17 @@
     extension MetinSignError {
         fileprivate func toMuhrError() -> MuhrError {
             switch self {
-            case .pinCodeMismatch:
-                return .invalidPin
+            case .pinCodeMismatch(_, let triesPin):
+                return triesPin > 0
+                    ? .invalidPin(triesRemaining: triesPin) : .pinBlocked
             case .certificateExpired(_, _, let notAfter):
-                let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                let expiry =
+                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
-            case .certificateRevoked:
-                return .certificateRevoked(reason: .unspecified)
-            case .invalidCertificate:
-                return .invalidCertificateFormat
+            case .certificateRevoked(let message):
+                return .certificateRevoked(reason: message)
+            case .invalidCertificate(let reason):
+                return .invalidCertificateFormat(reason: reason)
             case .signingFailed(let reason):
                 return .signingFailed(reason: reason)
             case .innOrPinflMismatch(let reason):
@@ -654,15 +699,17 @@
     extension MetinSignCmsError {
         fileprivate func toMuhrError() -> MuhrError {
             switch self {
-            case .pinCodeMismatch:
-                return .invalidPin
+            case .pinCodeMismatch(_, let triesPin):
+                return triesPin > 0
+                    ? .invalidPin(triesRemaining: triesPin) : .pinBlocked
             case .certificateExpired(_, _, let notAfter):
-                let expiry = ISO8601DateFormatter().date(from: notAfter) ?? Date()
+                let expiry =
+                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
                 return .certificateExpired(expiryDate: expiry)
-            case .certificateRevoked:
-                return .certificateRevoked(reason: .unspecified)
-            case .invalidCertificate:
-                return .invalidCertificateFormat
+            case .certificateRevoked(let message):
+                return .certificateRevoked(reason: message)
+            case .invalidCertificate(let reason):
+                return .invalidCertificateFormat(reason: reason)
             case .signingFailed(let reason):
                 return .signingFailed(reason: reason)
             case .alreadyExistSigner(let reason):
@@ -702,7 +749,9 @@
             case .invalidArgument(let reason):
                 return .providerConfigurationError(reason: reason)
             case .serverResponse(let response):
-                return .networkError(reason: "Server javobi xatosi: \(response)")
+                return .networkError(
+                    reason: "Server javobi xatosi: \(response)"
+                )
             case .httpError(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
             case .userNotValidate(let reason):
@@ -714,7 +763,9 @@
             case .csrError(let reason):
                 return .signingFailed(reason: "CSR yaratishda xato: \(reason)")
             case .deviceLimit(let reason):
-                return .providerConfigurationError(reason: "Qurilma limiti oshdi: \(reason)")
+                return .providerConfigurationError(
+                    reason: "Qurilma limiti oshdi: \(reason)"
+                )
             @unknown default:
                 return .unknown(message: "Noma'lum sertifikat qo'shish xatosi")
             }
@@ -730,8 +781,8 @@
                 return .certificateExpired(expiryDate: expiry)
             case .certificateNotFound(_):
                 return .certificateNotFound
-            case .certificateRevoked(_):
-                return .certificateRevoked(reason: .unspecified)
+            case .certificateRevoked(let message):
+                return .certificateRevoked(reason: message)
             case .httpError(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
             case .networkError(let reason):
@@ -748,9 +799,10 @@
             case .invalidArgument(let reason):
                 return .providerConfigurationError(reason: reason)
             case .pinCodeMismatch(_, let triesPin):
-                return triesPin > 0 ? .invalidPin : .pinBlocked
-            case .certificateRevoked(_):
-                return .certificateRevoked(reason: .unspecified)
+                return triesPin > 0
+                    ? .invalidPin(triesRemaining: triesPin) : .pinBlocked
+            case .certificateRevoked(let message):
+                return .certificateRevoked(reason: message)
             @unknown default:
                 return .unknown(message: "Noma'lum PIN o'zgartirish xatosi")
             }

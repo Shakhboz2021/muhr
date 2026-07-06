@@ -173,7 +173,7 @@ public final class ImportCertificateUseCase: Sendable {
     ) async throws -> CertificateInfo {
 
         guard let data = Data(base64Encoded: base64String) else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Base64 ma'lumotni dekod qilishda xatolik")
         }
 
         return try await execute(
@@ -190,7 +190,7 @@ public final class ImportCertificateUseCase: Sendable {
 
         // Minimum hajm
         guard data.count >= Self.minFileSize else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Fayl hajmi juda kichik (minimal: \(Self.minFileSize) bayt)")
         }
 
         // Maximum hajm
@@ -209,13 +209,13 @@ public final class ImportCertificateUseCase: Sendable {
         guard let firstByte = data.first,
             firstByte == Self.pkcs12MagicByte
         else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "PKCS12 magic bayt noto'g'ri (0x30 kutilayotgan edi)")
         }
 
         // Qo'shimcha ASN.1 struktura tekshiruvi
         // SEQUENCE tag'dan keyin length byte keladi
         guard data.count > 2 else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "PKCS12 ma'lumot juda qisqa (ASN.1 strukturasi to'liq emas)")
         }
     }
 

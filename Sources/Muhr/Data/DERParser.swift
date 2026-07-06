@@ -276,7 +276,7 @@ struct DERParser {
     /// GeneralizedTime: YYYYMMDDHHMMSSZ (tag: 0x18)
     private mutating func readTimeValue() throws -> Date {
         guard offset < data.count else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Vaqt maydonida ma'lumot tugadi")
         }
 
         let tag = data[offset]
@@ -284,14 +284,14 @@ struct DERParser {
         let length = try readLength()
 
         guard offset + length <= data.count else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Vaqt maydonining uzunligi ma'lumotdan oshib ketdi")
         }
 
         let timeData = Data(data[offset..<offset + length])
         offset += length
 
         guard let timeString = String(bytes: timeData, encoding: .ascii) else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Vaqt qiymatini ASCII ga o'girib bo'lmadi")
         }
 
         if tag == 0x17 {
@@ -302,7 +302,7 @@ struct DERParser {
             return parseGeneralizedTime(timeString) ?? Date()
         }
 
-        throw MuhrError.invalidCertificateFormat
+        throw MuhrError.invalidCertificateFormat(reason: "Noma'lum vaqt formati (0x\(String(tag, radix: 16)))")
     }
 
     /// UTCTime parse qilish: YYMMDDHHMMSSZ
@@ -396,7 +396,7 @@ struct DERParser {
 
     private mutating func readTag() throws -> UInt8 {
         guard offset < data.count else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "DER tag o'qishda ma'lumot tugadi")
         }
         let tag = data[offset]
         offset += 1
@@ -405,7 +405,7 @@ struct DERParser {
 
     private mutating func readLength() throws -> Int {
         guard offset < data.count else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "DER length o'qishda ma'lumot tugadi")
         }
 
         let first = data[offset]
@@ -417,7 +417,7 @@ struct DERParser {
 
         let numBytes = Int(first & 0x7F)
         guard offset + numBytes <= data.count else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "DER length baytlari ma'lumotdan tashqarida")
         }
 
         var length = 0
@@ -434,7 +434,7 @@ struct DERParser {
         _ = try readTag()
         let length = try readLength()
         guard offset + length <= data.count else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "DER TLV chegarasi ma'lumotdan tashqarida")
         }
         offset += length
         return length

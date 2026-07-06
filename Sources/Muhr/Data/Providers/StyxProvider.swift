@@ -438,14 +438,14 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         }
 
         guard status == errSecSuccess, items != nil else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "PKCS12 import muvaffaqiyatsiz (status: \(status))")
         }
 
         guard let itemsArray = items as? [[String: Any]],
             let firstItem = itemsArray.first,
             firstItem[kSecImportItemIdentity as String] != nil
         else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "PKCS12 ichida identity topilmadi")
         }
 
         let identity =
@@ -518,7 +518,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         let status = SecIdentityCopyCertificate(identity, &certificate)
 
         guard status == errSecSuccess, let cert = certificate else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Identity'dan sertifikat olib bo'lmadi")
         }
 
         let certDER = SecCertificateCopyData(cert) as Data
@@ -666,7 +666,7 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         var certificate: SecCertificate?
         let certStatus = SecIdentityCopyCertificate(identity, &certificate)
         guard certStatus == errSecSuccess, let cert = certificate else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Identity'dan sertifikat olib bo'lmadi")
         }
 
         // 5. Certificate DER data olish

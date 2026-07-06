@@ -249,10 +249,10 @@ public final class KeychainCertificateRepository: CertificateRepository,
         guard let itemsArray = items as? [[String: Any]],
             let firstItem = itemsArray.first
         else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "PKCS12 element massivini o'qib bo'lmadi")
         }
         guard firstItem[kSecImportItemIdentity as String] != nil else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "PKCS12 ichida identity topilmadi")
         }
         let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
         try saveIdentityToKeychain(identity)
@@ -341,7 +341,7 @@ public final class KeychainCertificateRepository: CertificateRepository,
         let certStatus = SecIdentityCopyCertificate(identity, &certificate)
 
         guard certStatus == errSecSuccess, let cert = certificate else {
-            throw MuhrError.invalidCertificateFormat
+            throw MuhrError.invalidCertificateFormat(reason: "Identity'dan sertifikat olib bo'lmadi")
         }
 
         var privateKey: SecKey?
