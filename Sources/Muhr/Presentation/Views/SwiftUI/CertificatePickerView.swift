@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
 public struct CertificatePickerView: View {
 
     @StateObject private var viewModel = CertificatePickerViewModel()
@@ -39,24 +38,14 @@ public struct CertificatePickerView: View {
         NavigationView {
             content
                 .navigationTitle(L10n.certificateTitle)
-                #if os(iOS)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(L10n.cancel) {
-                                handleCancel()
-                            }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(L10n.cancel) {
+                            handleCancel()
                         }
                     }
-                #else
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(L10n.cancel) {
-                                handleCancel()
-                            }
-                        }
-                    }
-                #endif
+                }
         }
         .onAppear {
             viewModel.onInstallSuccess = { cert in
@@ -128,11 +117,7 @@ public struct CertificatePickerView: View {
                         }
                     }
                 }
-                #if os(iOS)
-                    .listStyle(InsetGroupedListStyle())
-                #elseif os(macOS)
-                    .listStyle(SidebarListStyle())
-                #endif
+                .listStyle(InsetGroupedListStyle())
 
                 // Fixed bottom section
                 bottomSection
@@ -159,10 +144,8 @@ public struct CertificatePickerView: View {
                                 install(login: login)
                             }
                         )
-                        #if os(iOS)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                        #endif
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                     } else {
                         SecureField(
                             L10n.passwordPlaceholder,

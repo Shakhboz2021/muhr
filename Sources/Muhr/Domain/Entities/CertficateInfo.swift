@@ -248,7 +248,6 @@ extension CertificateInfo: Hashable {
 }
 
 // MARK: - CustomStringConvertible
-@available(iOS 15.0, *)
 extension CertificateInfo: CustomStringConvertible {
     public var description: String {
         """

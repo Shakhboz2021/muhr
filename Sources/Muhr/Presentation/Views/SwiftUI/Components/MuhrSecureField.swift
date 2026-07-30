@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
 public struct MuhrSecureField: View {
 
     // MARK: - Properties
@@ -56,11 +55,9 @@ public struct MuhrSecureField: View {
                     }
                 }
                 .disabled(!isEnabled)
-                #if os(iOS)
-                    .textContentType(.password)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                #endif
+                .textContentType(.password)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
 
                 Button(action: { isSecure.toggle() }) {
                     Image(systemName: isSecure ? "eye.slash" : "eye")
@@ -78,7 +75,6 @@ public struct MuhrSecureField: View {
 
 // MARK: - Preview
 #if DEBUG
-    @available(iOS 14.0, macOS 11.0, *)
     struct MuhrSecureField_Previews: PreviewProvider {
         static var previews: some View {
             ZStack {

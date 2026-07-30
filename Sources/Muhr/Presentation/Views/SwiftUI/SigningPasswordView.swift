@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
 public struct SigningPasswordView: View {
 
     @StateObject private var viewModel: SigningPasswordViewModel
@@ -261,7 +260,6 @@ public struct SigningPasswordView: View {
 
 // MARK: - Preview
 #if DEBUG
-    @available(iOS 14.0, macOS 11.0, *)
     struct SigningPasswordView_Previews: PreviewProvider {
         static var previews: some View {
             SigningPasswordView(

@@ -25,9 +25,26 @@ public enum ProviderType: String, CaseIterable, Codable, Sendable {
 
     /// E-IMZO - Davlat xizmatlari
     ///
-    /// Davlat xizmatlari uchun raqamli imzo.
-    /// Kelajakda qo'shiladi.
+    /// EimzoSDK orqali UI-driven imzolash.
+    /// NFC, QR, PFX, USB token qo'llab-quvvatlanadi.
     case eImzo = "eImzo"
+
+    // MARK: - JSON keyType init
+
+    /// Server JSON'idagi `keyType` stringidan init qilish
+    ///
+    /// ```json
+    /// { "keyType": "STYX" }
+    /// { "keyType": "EIMZO" }
+    /// ```
+    public init?(keyType: String) {
+        switch keyType.uppercased() {
+        case "STYX":                       self = .styx
+        case "METIN":                      self = .metin
+        case "EIMZO", "E_IMZO", "E-IMZO": self = .eImzo
+        default:                           return nil
+        }
+    }
 
     /// Foydalanuvchiga ko'rsatiladigan nom
     public var displayName: String {

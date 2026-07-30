@@ -12,8 +12,7 @@ let package = Package(
     name: "Muhr",
     defaultLocalization: "uz",
     platforms: [
-        .iOS(.v14),
-        .macOS(.v12),
+        .iOS(.v16),
     ],
 
     products: [
@@ -21,6 +20,10 @@ let package = Package(
             name: "Muhr",
             targets: ["Muhr"]
         ),
+    ],
+
+    dependencies: [
+        .package(url: "https://github.com/peachdev-uz/eimzo-ios-sdk", .upToNextMajor(from: "1.0.0")),
     ],
 
     targets: [
@@ -39,6 +42,11 @@ let package = Package(
             dependencies: [
                 .target(
                     name: "MetinSDK",
+                    condition: .when(platforms: [.iOS])
+                ),
+                .product(
+                    name: "EimzoSDK",
+                    package: "eimzo-ios-sdk",
                     condition: .when(platforms: [.iOS])
                 ),
             ],

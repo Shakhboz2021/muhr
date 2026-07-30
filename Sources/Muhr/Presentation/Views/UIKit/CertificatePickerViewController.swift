@@ -1,16 +1,13 @@
-//
 //  CertificatePickerViewController.swift
 //  Muhr
 //
 //  Created by Muhammad on 29/01/26.
 //
 
-#if os(iOS)
     import UIKit
     import Combine
 
     // MARK: - Certificate Picker ViewController
-    @available(iOS 13.0, *)
     public final class CertificatePickerViewController: UIViewController {
 
         // MARK: - Properties
@@ -399,7 +396,6 @@
     }
 
     // MARK: - UITableViewDataSource
-    @available(iOS 13.0, *)
     extension CertificatePickerViewController: UITableViewDataSource {
 
         public func tableView(
@@ -431,7 +427,6 @@
     }
 
     // MARK: - UITableViewDelegate
-    @available(iOS 13.0, *)
     extension CertificatePickerViewController: UITableViewDelegate {
 
         public func tableView(
@@ -444,7 +439,6 @@
     }
 
     // MARK: - Certificate File Cell
-    @available(iOS 13.0, *)
     final class CertificateFileCell: UITableViewCell {
 
         static let identifier = "CertificateFileCell"
@@ -562,4 +556,3 @@
             checkmarkImageView.isHidden = !isSelected
         }
     }
-#endif

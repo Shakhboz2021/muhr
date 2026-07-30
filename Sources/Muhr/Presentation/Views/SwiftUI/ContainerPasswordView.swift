@@ -26,7 +26,6 @@ import SwiftUI
 ///     )
 /// }
 /// ```
-@available(iOS 14.0, macOS 11.0, *)
 public struct ContainerPasswordView: View {
 
     @Environment(\.presentationMode) var presentationMode

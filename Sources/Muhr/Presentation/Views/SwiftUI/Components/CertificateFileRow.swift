@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
 public struct CertificateFileRow: View {
 
     // MARK: - Properties

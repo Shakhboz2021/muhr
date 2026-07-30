@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
 public struct MuhrButton: View {
 
     // MARK: - Properties
@@ -69,7 +68,6 @@ public struct MuhrButton: View {
 }
 
 // MARK: - Secondary Button
-@available(iOS 14.0, macOS 11.0, *)
 public struct MuhrSecondaryButton: View {
 
     let title: String
@@ -91,7 +89,6 @@ public struct MuhrSecondaryButton: View {
 }
 
 // MARK: - Destructive Button
-@available(iOS 14.0, macOS 11.0, *)
 public struct MuhrDestructiveButton: View {
 
     let title: String
@@ -121,7 +118,6 @@ public struct MuhrDestructiveButton: View {
 
 // MARK: - Preview
 #if DEBUG
-    @available(iOS 14.0, macOS 11.0, *)
     struct MuhrButton_Previews: PreviewProvider {
         static var previews: some View {
             VStack(spacing: 16) {

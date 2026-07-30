@@ -9,7 +9,6 @@ import Combine
 import Foundation
 
 // MARK: - Signing State
-@available(iOS 14.0, macOS 11.0, *)
 public enum SigningState: Equatable {
     case idle
     case signing
@@ -18,7 +17,6 @@ public enum SigningState: Equatable {
 }
 
 // MARK: - ViewModel
-@available(iOS 14.0, macOS 11.0, *)
 @MainActor
 public final class SigningPasswordViewModel: ObservableObject {
 
