@@ -7,7 +7,6 @@
 
 import Foundation
 import SwiftUI
-import UIKit
 
 // MARK: - Muhr
 
@@ -29,12 +28,14 @@ public enum Muhr {
 
 extension Muhr {
 
+    #if canImport(UIKit)
     /// UIKit: Certificate picker controller
     public static func makeCertificatePickerViewController()
         -> CertificatePickerViewController
     {
         CertificatePickerViewController()
     }
+    #endif
 
     /// SwiftUI: Certificate picker view
     public static func certificatePickerView(
@@ -86,12 +87,27 @@ extension Muhr {
         /// E-IMZO davlat imzolash tizimi (EimzoSDK)
         ///
         /// ```swift
+        /// // AppDelegate yoki App.init da:
+        /// Muhr.configure(eimzoBaseURL: URL(string: "https://api.eimzo.uz")!)
+        ///
+        /// // Keyin ishlating:
         /// .sheet(isPresented: $show) {
         ///     Muhr.eimzo.makeView(deepLink: link) { result in
         ///         show = false
         ///     }
         /// }
         /// ```
-        public static let eimzo = EImzoProvider()
+        public private(set) static var eimzo = EImzoProvider()
+
+        /// E-IMZO uchun base URL va ishlash rejimini sozlash
+        ///
+        /// Ilovani ishga tushirishda (AppDelegate yoki `App.init`) bir marta chaqiring.
+        ///
+        /// - Parameters:
+        ///   - eimzoBaseURL: E-IMZO REST API base URL (masalan: `https://api.eimzo.uz`)
+        ///   - isTestMode: `true` = test server, `false` = production (standart)
+        public static func configure(eimzoBaseURL: URL, isTestMode: Bool = false) {
+            eimzo = EImzoProvider(baseURL: eimzoBaseURL, isTestMode: isTestMode)
+        }
     }
 #endif

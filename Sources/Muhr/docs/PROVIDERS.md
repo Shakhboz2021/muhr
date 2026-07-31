@@ -13,8 +13,8 @@ Har biri arxitektura, talablar va foydalanish uslubi jihatidan farq qiladi.
 | Imzolash | Kod orqali | Kod orqali | UI orqali (foydalanuvchi) |
 | Autentifikatsiya | Parol (`.p12` shifri) | PIN kod | Foydalanuvchi o'zi |
 | Internet kerakmi | Yo'q | Ha | Ha |
-| Ixtiyoriy ma'lumot imzolash | Ha | Ha | Yo'q (server tokeni) |
 | Server integratsiyasi | Kerak emas | Kerak | Kerak |
+| Sozlash | Kerak emas | `initialize()` | `Muhr.configure(eimzoBaseURL:)` |
 
 ---
 
@@ -57,15 +57,12 @@ Foydalanuvchi     App                    Keychain
 **1. Sertifikat o'rnatish (bir marta):**
 
 ```swift
-// Foydalanuvchi Documents papkasidan fayl tanlaydi
-let fileURL: URL = ...
-let p12Data = try Data(contentsOf: fileURL)
-
 let certInfo = try await Muhr.styx.importCertificate(
     data: p12Data,
     password: "sertifikat_paroli",
     login: "user_login"
 )
+
 // yoki Muhr UI:
 Muhr.certificatePickerView(login: "user_login") { cert in
     print("O'rnatildi: \(cert.commonName)")
@@ -90,7 +87,7 @@ Muhr.signingView(data: data, login: "user_login") { result in
 }
 ```
 
-**3. CMS/PKCS#7 imzolash (server bilan mos format):**
+**3. CMS/PKCS#7 imzolash:**
 
 ```swift
 let cmsData = try await Muhr.styx.signCMS(
@@ -133,7 +130,7 @@ App                  Metin Server
 
 - **Internet**: Ha (har bir imzolashda)
 - **Server**: Metin serveri URL'i (`base_url`)
-- **Sozlash**: `initialize(baseUrl:)` chaqirilishi shart
+- **Sozlash**: `initialize()` chaqirilishi shart
 
 ### Foydalanish
 
@@ -174,7 +171,7 @@ let result = try await metin.addCertificate(
 // serialNumber bilan
 let signature = try await metin.sign(
     pinCode: "123456",
-    message: "imzolanadigan matn",  // yoki Base64 string
+    message: "imzolanadigan matn",
     serialNumber: savedSerialNumber
 )
 
@@ -210,115 +207,138 @@ let signedCMS = try await metin.signCMS(
 
 ### Qanday ishlaydi
 
-E-IMZO — O'zbekiston davlat ERI tizimi. Imzolash to'liq **SDK UI** ichida bo'ladi: foydalanuvchi QR kod skanerlaydi yoki ID kartasini NFC orqali ulaydi. Sizning server E-IMZO serveridan `qc` token oladi va uni app'ga uzatadi.
+E-IMZO — O'zbekiston davlat ERI tizimi. Muhr barcha network qadamlarini avtomatik boshqaradi: app faqat imzolanadigan kontent va base URL beradi.
 
 ```
-App                 Sizning Server       E-IMZO Server
- |                        |                    |
- |  "Imzolash kerak"       |                    |
- |----------------------->|                    |
- |                        | signRequest()      |
- |                        |------------------->|
- |                        |<--- qc token ------|
- |<--- deepLink: eimzo://sign?qc=... ----------|
- |                        |                    |
- | EImzoView(deepLink:)   |                    |
- | [foydalanuvchi imzolaydi — QR yoki NFC]     |
- |                        |                    |
- | onSignComplete(signatureHex, serialNumber)  |
- |                        |                    |
- | signatureHex -----------|                    |
- |                        | verify(sig)        |
- |                        |------------------->|
+App                    Muhr                  E-IMZO Server
+ │                       │                        │
+ │  makeSignView(string) │                        │
+ │──────────────────────>│                        │
+ │                       │  POST /auth            │
+ │                       │  {content, fileName}   │
+ │                       │───────────────────────>│
+ │                       │  {state, documentId,   │
+ │                       │   challenge}           │
+ │                       │<───────────────────────│
+ │                       │                        │
+ │          EImzoSDK UI (QR skaner yoki NFC)       │
+ │          Foydalanuvchi E-IMZO ilovasi bilan     │
+ │          tasdiqlaydi                            │
+ │                       │                        │
+ │                       │  POST /upload          │
+ │                       │  {pkcs7, documentId,   │
+ │                       │   serialNumber}        │
+ │                       │───────────────────────>│
+ │                       │                        │
+ │  onComplete(MuhrSignResult)                    │
+ │<──────────────────────│                        │
 ```
 
 **Xavfsizlik modeli:**
 - Sertifikat E-IMZO serverida yoki foydalanuvchining ID kartasida
 - App faqat UI ko'rsatadi, imzoni o'zi yaratmaydi
-- `qc` token bir martalik va muddatli
+- Network (auth → upload) Muhr ichida boshqariladi
 
 ### Talablar
 
 - **Internet**: Ha
-- **Bundle ID ro'yxati**: `info@peachdev.uz` ga yuborish kerak (bloklanmaslik uchun)
+- **Bundle ID ro'yxati**: `info@peachdev.uz` ga yuborish kerak
 - **Kamera ruxsati**: QR skaner uchun majburiy
 - **NFC** (ixtiyoriy): ID karta uchun
+- **`Muhr.configure(eimzoBaseURL:)`**: App launch da chaqirilishi shart
 
-**Info.plist:**
+### Sozlash
 
-```xml
-<!-- Majburiy -->
-<key>NSCameraUsageDescription</key>
-<string>QR-kod o'qish uchun kamera kerak</string>
-
-<!-- ID karta kerak bo'lsa -->
-<key>NFCReaderUsageDescription</key>
-<string>ID-karta orqali kalit o'qish uchun NFC kerak</string>
-<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
-<array>
-  <string>65696D7A6F617070</string>
-</array>
-```
-
-**Entitlements** (NFC uchun):
-
-```xml
-<key>com.apple.developer.nfc.readersession.formats</key>
-<array>
-  <string>TAG</string>
-</array>
+```swift
+@main
+struct MyApp: App {
+    init() {
+        Muhr.configure(
+            eimzoBaseURL: URL(string: "https://your-backend.uz/api")!
+        )
+    }
+}
 ```
 
 ### Foydalanish
 
+**Matn imzolash:**
+
 ```swift
-import Muhr
-
-struct ContentView: View {
-    @State private var showEimzo = false
-    @State private var deepLink: String?
-
-    var body: some View {
-        Button("E-IMZO bilan imzolash") {
-            // Serverdan deepLink olib, keyin sheetni oching
-            Task {
-                deepLink = try await fetchDeepLinkFromServer()
-                showEimzo = true
-            }
+.sheet(isPresented: $showEimzo) {
+    Muhr.eimzo.sign(string: "Imzolanadigan matn") { result in
+        switch result {
+        case .success(let res):
+            print(res.signatureHex)    // PKCS7 imzo
+            print(res.serialNumber ?? "") // Sertifikat raqami
+        case .failure(let error):
+            print(error.localizedDescription)
         }
-        .sheet(isPresented: $showEimzo) {
-            Muhr.eimzo.makeView(deepLink: deepLink) { result in
-                switch result {
-                case .success(let res):
-                    // res.signatureHex — imzo
-                    // res.serialNumber — sertifikat raqami
-                    sendToServer(res.signatureHex)
-                case .failure(let error):
-                    print(error.localizedDescription)
-                }
-                showEimzo = false
-                deepLink = nil
-            }
-        }
-        // Boshqa ilovadan (browser/QR) kelgan deep link
-        .onOpenURL { url in
-            guard url.scheme == "eimzo" else { return }
-            deepLink = url.absoluteString
-            showEimzo = true
-        }
+        showEimzo = false
     }
+}
+```
+
+**Data imzolash (xotiradagi binary):**
+
+```swift
+.sheet(isPresented: $showEimzo) {
+    Muhr.eimzo.sign(data: pdfData, fileName: "contract.pdf") { result in
+        showEimzo = false
+    }
+}
+```
+
+**Fayl imzolash (diskdan):**
+
+```swift
+.sheet(isPresented: $showEimzo) {
+    Muhr.eimzo.sign(fileURL: pdfURL) { result in
+        showEimzo = false
+    }
+}
+```
+
+**Encodable struct imzolash:**
+
+```swift
+struct Contract: Encodable {
+    let id: Int
+    let amount: Double
+}
+
+.sheet(isPresented: $showEimzo) {
+    Muhr.eimzo.sign(encodable: Contract(id: 1, amount: 500_000)) { result in
+        showEimzo = false
+    }
+}
+```
+
+**Tashqi deeplink (serverdan yoki boshqa ilovadan):**
+
+```swift
+.sheet(isPresented: $showEimzo) {
+    Muhr.eimzo.sign(deepLink: incomingLink) { result in
+        showEimzo = false
+    }
+}
+.onOpenURL { url in
+    guard url.scheme == "eimzo" else { return }
+    incomingLink = url.absoluteString
+    showEimzo = true
 }
 ```
 
 **Test rejimi:**
 
 ```swift
-// Muhr.eimzo — production (m.e-imzo.uz)
-// Test uchun alohida instance:
-let testEimzo = EImzoProvider(isTestMode: true)  // m.test.e-imzo.uz
+Muhr.configure(
+    eimzoBaseURL: URL(string: "https://your-backend.uz/api")!,
+    isTestMode: true  // m.test.e-imzo.uz ga ulanadi
+)
 ```
 
-> **Eslatma:** Test va production serverlaridan kelgan `qc` tokenlar bir-biri bilan mos kelmaydi. Qaysi muhitda ishlasangiz, `isTestMode` ham mos bo'lishi kerak.
+> **Eslatma:** Test va production serverlaridan kelgan tokenlar bir-biri bilan mos kelmaydi.
 
 ---
 
@@ -326,7 +346,7 @@ let testEimzo = EImzoProvider(isTestMode: true)  // m.test.e-imzo.uz
 
 | Holat | Provider |
 |---|---|
-| Bank ilovasi, server bor, qurilmada kalit kerak emas | **Metin** |
 | Offline ishlashi kerak, foydalanuvchi o'z `.p12` faylini boshqaradi | **Styx** |
+| Bank ilovasi, server bor, qurilmada kalit kerak emas | **Metin** |
 | Davlat tizimi, E-IMZO portal bilan integratsiya | **E-IMZO** |
 | Bir ilovada bir nechta tizim | Hammasini bir vaqtda ishlatsa bo'ladi |

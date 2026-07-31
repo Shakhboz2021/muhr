@@ -4,6 +4,7 @@
 //  Created by Muhammad on 29/01/26.
 //
 
+#if canImport(UIKit)
     import UIKit
     import Combine
 
@@ -556,3 +557,5 @@
             checkmarkImageView.isHidden = !isSelected
         }
     }
+
+#endif
