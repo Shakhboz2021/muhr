@@ -402,7 +402,6 @@
             return try await withCheckedThrowingContinuation { continuation in
                 sdk.addCertificate(
                     userId: userId,
-                    dboUserId: dboUserId,
                     emailAddress: emailAddress,
                     commonName: commonName,
                     organizationUnitName: organizationUnitName,
@@ -415,6 +414,7 @@
                     inn: inn,
                     pinCode: pinCode,
                     surName: surName,
+                    dboUserId: dboUserId,
                     headers: headers
                 ) { result in
                     switch result {
@@ -491,7 +491,12 @@
 
         /// Sertifikatni dboUserId bilan o'chirish
         public func deleteCertificate(dboUserId: String) async {
-            sdk.deleteCertificate(dboUserId: dboUserId)
+            await withCheckedContinuation {
+                (continuation: CheckedContinuation<Void, Never>) in
+                sdk.deleteCertificate(dboUserId: dboUserId) { _ in
+                    continuation.resume()
+                }
+            }
         }
 
         /// Barcha sertifikatlarni tozalash

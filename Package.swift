@@ -27,11 +27,12 @@ let package = Package(
     ],
 
     targets: [
-        // MARK: - MetinSDK (remote binary, iOS only)
+        // MARK: - MetinSDK (LOCAL test binary, iOS only)
+        // TEMP: v2.1.0 ni local test qilish uchun. Commit qilmang —
+        // asl remote binaryTarget ga qaytaring.
         .binaryTarget(
             name: "MetinSDK",
-            url: "https://github.com/AzizParpiyev/MetinSDK/raw/mkbank/MetinSDK-iOS/MetinSDK.xcframework_v1.1.7.zip",
-            checksum: "04d2e74f5b98a282ad4ea2a442edbf9d6e4e28f3dc431f5880b6050d03594ea6"
+            path: "Frameworks/MetinSDK.xcframework"
         ),
 
         // MARK: - Muhr (iOS + macOS)

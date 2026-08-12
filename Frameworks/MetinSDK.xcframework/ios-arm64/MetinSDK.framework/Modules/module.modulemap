@@ -1,0 +1,10 @@
+framework module MetinSDK {
+  umbrella header "MetinSDK.h"
+  export *
+
+  module * { export * }
+}
+
+module MetinSDK.Swift {
+  header "MetinSDK-Swift.h"
+}
