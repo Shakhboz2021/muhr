@@ -85,7 +85,12 @@
                 )
             }
 
-            sdk.initialize(baseUrl: baseUrl)
+            // PIN urinishlar limiti (ixtiyoriy) — konfiguratsiyada bo'lsa uzatiladi
+            let maxTryLimitPin = configuration
+                .additionalParameters["max_try_limit_pin"]
+                .flatMap { Int($0) }
+
+            sdk.initialize(baseUrl: baseUrl, maxTryLimitPin: maxTryLimitPin)
 
             await MainActor.run {
                 self.isInitialized = true

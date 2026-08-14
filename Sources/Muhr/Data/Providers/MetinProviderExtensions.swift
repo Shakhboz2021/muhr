@@ -39,14 +39,20 @@ extension MetinProvider {
     ///
     /// - Parameters:
     ///   - baseUrl: MetinSDK server manzili (masalan: "https://api.metin.uz")
+    ///   - maxTryLimitPin: PIN kod uchun ruxsat etilgan urinishlar soni (ixtiyoriy).
+    ///     `nil` bo'lsa MetinSDK standart qiymatidan foydalanadi.
     ///   - delegate: Hodisalarni kuzatish uchun delegate (ixtiyoriy)
     public func initialize(
         baseUrl: String,
+        maxTryLimitPin: Int? = nil,
         delegate: ProviderDelegate? = nil
     ) async throws {
         setDelegate(delegate)
         var config = configuration
         config.additionalParameters["base_url"] = baseUrl
+        if let maxTryLimitPin {
+            config.additionalParameters["max_try_limit_pin"] = String(maxTryLimitPin)
+        }
         try await updateConfiguration(config)
         try await initialize()
     }
