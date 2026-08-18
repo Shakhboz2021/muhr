@@ -680,12 +680,15 @@
 
     // MARK: - MetinSDK Error → MuhrError
 
-    extension MetinSignError {
+    // v2.1.5 dan boshlab barcha xatolar bitta `MetinException` enum'iga
+    // birlashtirilgan (MetinSignError, MetinSignCmsError, ... — hammasi
+    // shunga typealias). Shu sabab yagona mapping yetarli.
+    extension MetinException {
         fileprivate func toMuhrError() -> MuhrError {
             switch self {
-            case .pinCodeMismatch(_, let triesPin):
-                return triesPin > 0
-                    ? .invalidPin(triesRemaining: triesPin) : .pinBlocked
+            case .pinCodeMismatch(_, let triesCount):
+                return triesCount > 0
+                    ? .invalidPin(triesRemaining: triesCount) : .pinBlocked
             case .certificateExpired(_, _, let notAfter):
                 let expiry =
                     ISO8601DateFormatter().date(from: notAfter) ?? Date()
@@ -694,127 +697,54 @@
                 return .certificateRevoked(reason: message)
             case .invalidCertificate(let reason):
                 return .invalidCertificateFormat(reason: reason)
-            case .signingFailed(let reason):
-                return .signingFailed(reason: reason)
+            case .invalidArgument(let reason):
+                return .providerConfigurationError(reason: reason)
             case .innOrPinflMismatch(let reason):
                 return .providerConfigurationError(
                     reason: "INN/PINFL mos kelmadi: \(reason)"
                 )
-            @unknown default:
-                return .signingFailed(reason: "Noma'lum imzolash xatosi")
-            }
-        }
-    }
-
-    extension MetinSignCmsError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .pinCodeMismatch(_, let triesPin):
-                return triesPin > 0
-                    ? .invalidPin(triesRemaining: triesPin) : .pinBlocked
-            case .certificateExpired(_, _, let notAfter):
-                let expiry =
-                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
-                return .certificateExpired(expiryDate: expiry)
-            case .certificateRevoked(let message):
-                return .certificateRevoked(reason: message)
-            case .invalidCertificate(let reason):
-                return .invalidCertificateFormat(reason: reason)
-            case .signingFailed(let reason):
-                return .signingFailed(reason: reason)
             case .alreadyExistSigner(let reason):
                 return .signingFailed(
                     reason: "Bu sertifikat allaqachon imzo qo'ygan: \(reason)"
                 )
-            case .invalidCms:
+            case .cmsValidation:
                 return .invalidSignatureFormat
-            case .innOrPinflMismatch(let reason):
-                return .providerConfigurationError(
-                    reason: "INN/PINFL mos kelmadi: \(reason)"
-                )
-            @unknown default:
-                return .signingFailed(reason: "Noma'lum CMS imzolash xatosi")
-            }
-        }
-    }
-
-    extension MetinCmsVerifyError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .serverResponse(let message):
-                return .networkError(reason: "Server javobi xatosi: \(message)")
-            case .httpError(let reason):
-                return .networkError(reason: "HTTP xato: \(reason)")
-            case .networkError(let reason):
-                return .networkError(reason: reason)
-            @unknown default:
-                return .verificationFailed(reason: "Noma'lum tekshirish xatosi")
-            }
-        }
-    }
-
-    extension MetinAddCertificateError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .invalidArgument(let reason):
-                return .providerConfigurationError(reason: reason)
-            case .serverResponse(let response):
-                return .networkError(
-                    reason: "Server javobi xatosi: \(response)"
-                )
-            case .httpError(let reason):
-                return .networkError(reason: "HTTP xato: \(reason)")
-            case .userNotValidate(let reason):
-                return .providerConfigurationError(
-                    reason: "Foydalanuvchi tasdiqlanmagan: \(reason)"
-                )
-            case .networkError(let reason):
-                return .networkError(reason: reason)
-            case .csrError(let reason):
-                return .signingFailed(reason: "CSR yaratishda xato: \(reason)")
             case .deviceLimit(let reason):
                 return .providerConfigurationError(
                     reason: "Qurilma limiti oshdi: \(reason)"
                 )
-            @unknown default:
-                return .unknown(message: "Noma'lum sertifikat qo'shish xatosi")
-            }
-        }
-    }
-
-    extension MetinGetCertificateError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .certificateExpired(_, _, let notAfter):
-                let expiry =
-                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
-                return .certificateExpired(expiryDate: expiry)
-            case .certificateNotFound(_):
-                return .certificateNotFound
-            case .certificateRevoked(let message):
-                return .certificateRevoked(reason: message)
-            case .httpError(let reason):
+            case .invalidToken(let reason):
+                return .providerConfigurationError(
+                    reason: "Token noto'g'ri: \(reason)"
+                )
+            case .metinHttp(let reason):
                 return .networkError(reason: "HTTP xato: \(reason)")
-            case .networkError(let reason):
-                return .networkError(reason: reason)
+            case .metinTimeout(let reason):
+                return .networkError(reason: "So'rov vaqti tugadi: \(reason)")
+            case .metinServer(let reason):
+                return .networkError(reason: "Server xatosi: \(reason)")
+            case .metinUserNotFound(let reason):
+                return .providerConfigurationError(
+                    reason: "Foydalanuvchi topilmadi: \(reason)"
+                )
+            case .metinUserExist(let reason):
+                return .providerConfigurationError(
+                    reason: "Foydalanuvchi allaqachon mavjud: \(reason)"
+                )
+            case .metinUserValidate(let reason):
+                return .providerConfigurationError(
+                    reason: "Foydalanuvchi tasdiqlanmagan: \(reason)"
+                )
+            case .wrongPhoneNumber(let reason):
+                return .providerConfigurationError(
+                    reason: "Telefon raqami noto'g'ri: \(reason)"
+                )
+            case .metinSqlite(let reason):
+                return .unknown(message: "Ma'lumotlar bazasi xatosi: \(reason)")
+            case .notInitialized:
+                return .providerNotInitialized
             @unknown default:
-                return .unknown(message: "Noma'lum sertifikat olish xatosi")
-            }
-        }
-    }
-
-    extension MetinChangePinError {
-        fileprivate func toMuhrError() -> MuhrError {
-            switch self {
-            case .invalidArgument(let reason):
-                return .providerConfigurationError(reason: reason)
-            case .pinCodeMismatch(_, let triesPin):
-                return triesPin > 0
-                    ? .invalidPin(triesRemaining: triesPin) : .pinBlocked
-            case .certificateRevoked(let message):
-                return .certificateRevoked(reason: message)
-            @unknown default:
-                return .unknown(message: "Noma'lum PIN o'zgartirish xatosi")
+                return .unknown(message: "Noma'lum Metin xatosi")
             }
         }
     }

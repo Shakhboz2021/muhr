@@ -6054,79 +6054,52 @@ extension MetinSDK.CertificateStore {
 }
 public protocol MetinError : Swift.Error {
 }
-public enum MetinGenerateOtpError : MetinSDK.MetinError {
-  case serverResponse(Swift.String)
-  case httpError(Swift.String)
-  case networkError(Swift.String)
-}
-public enum MetinAddUserError : MetinSDK.MetinError {
+public enum MetinException : MetinSDK.MetinError, Swift.CustomStringConvertible, Swift.Equatable {
   case invalidArgument(Swift.String)
-  case serverResponse(Swift.String)
-  case userExist(Swift.String)
-  case userNotValidate(Swift.String)
-  case wrongOtpCode(Swift.String)
-  case httpError(Swift.String)
-  case networkError(Swift.String)
-}
-public enum MetinGetUserError : MetinSDK.MetinError {
-  case invalidArgument(Swift.String)
-  case serverResponse(Swift.String)
-  case userNotFound(Swift.String)
-  case wrongOtpCode(Swift.String)
-  case httpError(Swift.String)
-  case networkError(Swift.String)
-}
-public enum MetinAddCertificateError : MetinSDK.MetinError {
-  case invalidArgument(Swift.String)
-  case serverResponse(Swift.String)
-  case httpError(Swift.String)
-  case userNotValidate(Swift.String)
-  case networkError(Swift.String)
-  case csrError(Swift.String)
-  case deviceLimit(Swift.String)
-}
-public enum MetinGetCertificateError : MetinSDK.MetinError {
-  case certificateExpired(Swift.String, Swift.String, Swift.String)
-  case certificateNotFound(Swift.String)
-  case certificateRevoked(Swift.String)
-  case httpError(Swift.String)
-  case networkError(Swift.String)
-}
-public enum MetinSignError : MetinSDK.MetinError {
-  case certificateExpired(Swift.String, Swift.String, Swift.String)
-  case pinCodeMismatch(Swift.String, attempts: Swift.Int)
-  case certificateRevoked(Swift.String)
   case invalidCertificate(Swift.String)
-  case signingFailed(Swift.String)
+  case certificateExpired(Swift.String, notBefore: Swift.String, notAfter: Swift.String)
+  case certificateRevoked(Swift.String)
+  case pinCodeMismatch(Swift.String, triesCount: Swift.Int)
   case innOrPinflMismatch(Swift.String)
-}
-public enum MetinSignCmsError : MetinSDK.MetinError {
-  case certificateExpired(Swift.String, Swift.String, Swift.String)
-  case pinCodeMismatch(Swift.String, attempts: Swift.Int)
-  case certificateRevoked(Swift.String)
-  case invalidCertificate(Swift.String)
-  case signingFailed(Swift.String)
   case alreadyExistSigner(Swift.String)
-  case invalidCms(Swift.String)
-  case innOrPinflMismatch(Swift.String)
+  case cmsValidation(Swift.String)
+  case deviceLimit(Swift.String)
+  case invalidToken(Swift.String)
+  case metinHttp(Swift.String)
+  case metinTimeout(Swift.String)
+  case metinServer(Swift.String)
+  case metinUserNotFound(Swift.String)
+  case metinUserExist(Swift.String)
+  case metinUserValidate(Swift.String)
+  case wrongPhoneNumber(Swift.String)
+  case metinSqlite(Swift.String)
+  case notInitialized(Swift.String)
+  public var name: Swift.String {
+    get
+  }
+  public var message: Swift.String {
+    get
+  }
+  public var description: Swift.String {
+    get
+  }
+  public static func == (a: MetinSDK.MetinException, b: MetinSDK.MetinException) -> Swift.Bool
 }
-public enum MetinCmsVerifyError : MetinSDK.MetinError {
-  case serverResponse(Swift.String)
-  case httpError(Swift.String)
-  case networkError(Swift.String)
+extension MetinSDK.MetinException : Foundation.LocalizedError {
+  public var errorDescription: Swift.String? {
+    get
+  }
 }
-public enum MetinChangePinError : MetinSDK.MetinError {
-  case invalidArgument(Swift.String)
-  case pinCodeMismatch(Swift.String, attempts: Swift.Int)
-  case certificateRevoked(Swift.String)
-}
-public enum MetinDeleteCertificateError : MetinSDK.MetinError {
-  case invalidArgument(Swift.String)
-  case serverResponse(Swift.String)
-  case httpError(Swift.String)
-  case networkError(Swift.String)
-  case unexpected(Swift.String)
-}
+public typealias MetinGenerateOtpError = MetinSDK.MetinException
+public typealias MetinAddUserError = MetinSDK.MetinException
+public typealias MetinGetUserError = MetinSDK.MetinException
+public typealias MetinAddCertificateError = MetinSDK.MetinException
+public typealias MetinGetCertificateError = MetinSDK.MetinException
+public typealias MetinSignError = MetinSDK.MetinException
+public typealias MetinSignCmsError = MetinSDK.MetinException
+public typealias MetinCmsVerifyError = MetinSDK.MetinException
+public typealias MetinChangePinError = MetinSDK.MetinException
+public typealias MetinDeleteCertificateError = MetinSDK.MetinException
 public struct ASN1UTF8String : MetinSDK.DERImplicitlyTaggable, MetinSDK.BERImplicitlyTaggable, Swift.Hashable, Swift.Sendable, Swift.ExpressibleByStringLiteral {
   @inlinable public static var defaultIdentifier: MetinSDK.ASN1Identifier {
     get {
