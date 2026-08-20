@@ -153,6 +153,15 @@ public enum MuhrError: Error, Sendable {
     /// - Parameter reason: Xato sababi
     case providerConfigurationError(reason: String)
 
+    /// Metin provider xatosi (MetinSDK'dan kelgan strukturaviy xato)
+    ///
+    /// MetinSDK barcha xatolarini shu case orqali, aynan o'z case'lari bilan
+    /// uzatadi. App string tekshirmasdan pattern-match qila oladi:
+    /// ```swift
+    /// if case .failure(.metin(.certificateRevoked(let reason))) = result { ... }
+    /// ```
+    case metin(MuhrMetinError)
+
     // MARK: - Authentication Errors (8xxx)
 
     /// PIN kod talab qilinadi
@@ -277,6 +286,8 @@ extension MuhrError: LocalizedError {
             return "'\(name)' provider qo'llab-quvvatlanmaydi"
         case .providerConfigurationError(let reason):
             return "Provider konfiguratsiya xatosi: \(reason)"
+        case .metin(let error):
+            return error.errorDescription
 
         // Authentication
         case .pinRequired:
@@ -410,6 +421,7 @@ extension MuhrError {
         case .providerNotInitialized: return 7001
         case .providerNotSupported: return 7002
         case .providerConfigurationError: return 7003
+        case .metin(let error): return error.errorCode
 
         // Authentication: 8xxx
         case .pinRequired: return 8001

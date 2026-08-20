@@ -683,68 +683,62 @@
     // v2.1.5 dan boshlab barcha xatolar bitta `MetinException` enum'iga
     // birlashtirilgan (MetinSignError, MetinSignCmsError, ... — hammasi
     // shunga typealias). Shu sabab yagona mapping yetarli.
+    //
+    // MetinException case'lari `MuhrMetinError` ga **1:1** o'giriladi va
+    // `MuhrError.metin(_)` orqali uzatiladi. Bu yerda hech qanday ma'lumot
+    // yo'qolmaydi — App string tekshirmasdan, aynan o'sha case'lar bo'yicha
+    // pattern-match qila oladi.
     extension MetinException {
         fileprivate func toMuhrError() -> MuhrError {
+            .metin(toMuhrMetinError())
+        }
+
+        private func toMuhrMetinError() -> MuhrMetinError {
             switch self {
-            case .pinCodeMismatch(_, let triesCount):
-                return triesCount > 0
-                    ? .invalidPin(triesRemaining: triesCount) : .pinBlocked
-            case .certificateExpired(_, _, let notAfter):
-                let expiry =
-                    ISO8601DateFormatter().date(from: notAfter) ?? Date()
-                return .certificateExpired(expiryDate: expiry)
-            case .certificateRevoked(let message):
-                return .certificateRevoked(reason: message)
-            case .invalidCertificate(let reason):
-                return .invalidCertificateFormat(reason: reason)
             case .invalidArgument(let reason):
-                return .providerConfigurationError(reason: reason)
+                return .invalidArgument(reason)
+            case .invalidCertificate(let reason):
+                return .invalidCertificate(reason)
+            case .certificateExpired(let message, let notBefore, let notAfter):
+                return .certificateExpired(
+                    message: message,
+                    notBefore: notBefore,
+                    notAfter: notAfter
+                )
+            case .certificateRevoked(let reason):
+                return .certificateRevoked(reason)
+            case .pinCodeMismatch(let message, let triesCount):
+                return .pinCodeMismatch(message: message, triesCount: triesCount)
             case .innOrPinflMismatch(let reason):
-                return .providerConfigurationError(
-                    reason: "INN/PINFL mos kelmadi: \(reason)"
-                )
+                return .innOrPinflMismatch(reason)
             case .alreadyExistSigner(let reason):
-                return .signingFailed(
-                    reason: "Bu sertifikat allaqachon imzo qo'ygan: \(reason)"
-                )
-            case .cmsValidation:
-                return .invalidSignatureFormat
+                return .alreadyExistSigner(reason)
+            case .cmsValidation(let reason):
+                return .cmsValidation(reason)
             case .deviceLimit(let reason):
-                return .providerConfigurationError(
-                    reason: "Qurilma limiti oshdi: \(reason)"
-                )
+                return .deviceLimit(reason)
             case .invalidToken(let reason):
-                return .providerConfigurationError(
-                    reason: "Token noto'g'ri: \(reason)"
-                )
+                return .invalidToken(reason)
             case .metinHttp(let reason):
-                return .networkError(reason: "HTTP xato: \(reason)")
+                return .metinHttp(reason)
             case .metinTimeout(let reason):
-                return .networkError(reason: "So'rov vaqti tugadi: \(reason)")
+                return .metinTimeout(reason)
             case .metinServer(let reason):
-                return .networkError(reason: "Server xatosi: \(reason)")
+                return .metinServer(reason)
             case .metinUserNotFound(let reason):
-                return .providerConfigurationError(
-                    reason: "Foydalanuvchi topilmadi: \(reason)"
-                )
+                return .metinUserNotFound(reason)
             case .metinUserExist(let reason):
-                return .providerConfigurationError(
-                    reason: "Foydalanuvchi allaqachon mavjud: \(reason)"
-                )
+                return .metinUserExist(reason)
             case .metinUserValidate(let reason):
-                return .providerConfigurationError(
-                    reason: "Foydalanuvchi tasdiqlanmagan: \(reason)"
-                )
+                return .metinUserValidate(reason)
             case .wrongPhoneNumber(let reason):
-                return .providerConfigurationError(
-                    reason: "Telefon raqami noto'g'ri: \(reason)"
-                )
+                return .wrongPhoneNumber(reason)
             case .metinSqlite(let reason):
-                return .unknown(message: "Ma'lumotlar bazasi xatosi: \(reason)")
-            case .notInitialized:
-                return .providerNotInitialized
+                return .metinSqlite(reason)
+            case .notInitialized(let reason):
+                return .notInitialized(reason)
             @unknown default:
-                return .unknown(message: "Noma'lum Metin xatosi")
+                return .unknown(self.message)
             }
         }
     }
