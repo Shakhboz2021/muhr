@@ -158,9 +158,14 @@ public enum MuhrError: Error, Sendable {
     /// MetinSDK barcha xatolarini shu case orqali, aynan o'z case'lari bilan
     /// uzatadi. App string tekshirmasdan pattern-match qila oladi:
     /// ```swift
-    /// if case .failure(.metin(.certificateRevoked(let reason))) = result { ... }
+    /// if case .failure(.metin(.certificateRevoked(let reason), _)) = result { ... }
     /// ```
-    case metin(MuhrMetinError)
+    ///
+    /// - Parameter requiresNewCertificate: MetinSDK belgilagan flag — `true`
+    ///   bo'lsa mavjud sertifikat yaroqsiz, qayta yaratish kerak (avval "cert
+    ///   topilmadi" holati string orqali tekshirilardi). Qulaylik uchun
+    ///   `MuhrError.requiresNewCertificate` dan foydalaning.
+    case metin(MuhrMetinError, requiresNewCertificate: Bool)
 
     // MARK: - Authentication Errors (8xxx)
 
@@ -286,7 +291,7 @@ extension MuhrError: LocalizedError {
             return "'\(name)' provider qo'llab-quvvatlanmaydi"
         case .providerConfigurationError(let reason):
             return "Provider konfiguratsiya xatosi: \(reason)"
-        case .metin(let error):
+        case .metin(let error, _):
             return error.errorDescription
 
         // Authentication
@@ -421,7 +426,7 @@ extension MuhrError {
         case .providerNotInitialized: return 7001
         case .providerNotSupported: return 7002
         case .providerConfigurationError: return 7003
-        case .metin(let error): return error.errorCode
+        case .metin(let error, _): return error.errorCode
 
         // Authentication: 8xxx
         case .pinRequired: return 8001
@@ -443,6 +448,26 @@ extension MuhrError {
         case .maxAttemptsExceeded:
             return 9997
         }
+    }
+}
+
+// MARK: - Metin Convenience
+extension MuhrError {
+
+    /// Mavjud sertifikat yaroqsiz va qayta yaratilishi kerakligini bildiradi
+    ///
+    /// MetinSDK aniqlagan flag. `true` bo'lsa App foydalanuvchini yangi
+    /// sertifikat yaratishga yo'naltirishi kerak. Faqat `.metin` xatolari uchun
+    /// ma'noli, boshqa hollarda `false`.
+    ///
+    /// ```swift
+    /// if case .failure(let error) = result, error.requiresNewCertificate {
+    ///     // sertifikatni qayta yaratish oqimiga o'tish
+    /// }
+    /// ```
+    public var requiresNewCertificate: Bool {
+        if case .metin(_, let flag) = self { return flag }
+        return false
     }
 }
 

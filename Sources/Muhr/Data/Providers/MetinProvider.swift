@@ -690,7 +690,10 @@
     // pattern-match qila oladi.
     extension MetinException {
         fileprivate func toMuhrError() -> MuhrError {
-            .metin(toMuhrMetinError())
+            .metin(
+                toMuhrMetinError(),
+                requiresNewCertificate: requiresNewCertificate
+            )
         }
 
         private func toMuhrMetinError() -> MuhrMetinError {

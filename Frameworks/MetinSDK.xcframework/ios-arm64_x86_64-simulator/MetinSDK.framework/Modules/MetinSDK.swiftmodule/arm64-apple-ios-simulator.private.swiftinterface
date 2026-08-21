@@ -15,6 +15,16 @@ import UIKit
 import _Concurrency
 import _StringProcessing
 import _SwiftConcurrencyShims
+public enum MetinPinViolation : Swift.String, Swift.Equatable {
+  case length
+  case repeatedCharacters
+  case sequentialCharacters
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
 public struct SubjectKeyIdentifier {
   public var keyIdentifier: Swift.ArraySlice<Swift.UInt8>
   public init()
@@ -6215,6 +6225,9 @@ public enum MetinException : MetinSDK.MetinError, Swift.CustomStringConvertible,
   public var message: Swift.String {
     get
   }
+  public var requiresNewCertificate: Swift.Bool {
+    get
+  }
   public var description: Swift.String {
     get
   }
@@ -10613,7 +10626,8 @@ extension Swift.RandomAccessCollection {
 }
 @objc @_inheritsConvenienceInitializers final public class MetinManager : ObjectiveC.NSObject {
   public static let shared: MetinSDK.MetinManager
-  final public func initialize(baseUrl: Swift.String, maxTryLimitPin: Swift.Int? = nil, bearerToken: Swift.String? = nil)
+  final public func initialize(baseUrl: Swift.String, maxTryLimitPin: Swift.Int? = nil, bearerToken: Swift.String? = nil, pinLength: Swift.Int? = nil, pinComplexity: Swift.Bool = false)
+  final public func validatePin(_ pinCode: Swift.String) -> MetinSDK.MetinPinViolation?
   final public func updateBearerToken(_ bearerToken: Swift.String?)
   final public func isInitialized() -> Swift.Bool
   final public func getVersion() -> Swift.String
@@ -10820,6 +10834,8 @@ extension MetinSDK.PrivatePublicKeys : Swift.Identifiable {
 }
 public typealias CoreDataFoundationFrameworkSet = Foundation.NSSet
 public typealias CoreDataCoreDataFrameworkManagedObject = CoreData.NSManagedObject
+extension MetinSDK.MetinPinViolation : Swift.Hashable {}
+extension MetinSDK.MetinPinViolation : Swift.RawRepresentable {}
 @_spi(CMS) extension MetinSDK.CMS.Error : Swift.Equatable {}
 @_spi(CMS) extension MetinSDK.CMS.Error : Swift.Hashable {}
 extension MetinSDK.Digest : Swift.Equatable {}

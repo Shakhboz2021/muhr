@@ -25,6 +25,286 @@
         ]
       },
       {
+        "kind": "TypeDecl",
+        "name": "MetinPinViolation",
+        "printedName": "MetinPinViolation",
+        "children": [
+          {
+            "kind": "Var",
+            "name": "length",
+            "printedName": "length",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(MetinSDK.MetinPinViolation.Type) -> MetinSDK.MetinPinViolation",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "MetinPinViolation",
+                    "printedName": "MetinSDK.MetinPinViolation",
+                    "usr": "s:8MetinSDK0A12PinViolationO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "MetinSDK.MetinPinViolation.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "MetinPinViolation",
+                        "printedName": "MetinSDK.MetinPinViolation",
+                        "usr": "s:8MetinSDK0A12PinViolationO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:8MetinSDK0A12PinViolationO6lengthyA2CmF",
+            "mangledName": "$s8MetinSDK0A12PinViolationO6lengthyA2CmF",
+            "moduleName": "MetinSDK",
+            "declAttributes": [
+              "RawDocComment"
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "repeatedCharacters",
+            "printedName": "repeatedCharacters",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(MetinSDK.MetinPinViolation.Type) -> MetinSDK.MetinPinViolation",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "MetinPinViolation",
+                    "printedName": "MetinSDK.MetinPinViolation",
+                    "usr": "s:8MetinSDK0A12PinViolationO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "MetinSDK.MetinPinViolation.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "MetinPinViolation",
+                        "printedName": "MetinSDK.MetinPinViolation",
+                        "usr": "s:8MetinSDK0A12PinViolationO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:8MetinSDK0A12PinViolationO18repeatedCharactersyA2CmF",
+            "mangledName": "$s8MetinSDK0A12PinViolationO18repeatedCharactersyA2CmF",
+            "moduleName": "MetinSDK",
+            "declAttributes": [
+              "RawDocComment"
+            ]
+          },
+          {
+            "kind": "Var",
+            "name": "sequentialCharacters",
+            "printedName": "sequentialCharacters",
+            "children": [
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(MetinSDK.MetinPinViolation.Type) -> MetinSDK.MetinPinViolation",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "MetinPinViolation",
+                    "printedName": "MetinSDK.MetinPinViolation",
+                    "usr": "s:8MetinSDK0A12PinViolationO"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Metatype",
+                    "printedName": "MetinSDK.MetinPinViolation.Type",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "MetinPinViolation",
+                        "printedName": "MetinSDK.MetinPinViolation",
+                        "usr": "s:8MetinSDK0A12PinViolationO"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "EnumElement",
+            "usr": "s:8MetinSDK0A12PinViolationO20sequentialCharactersyA2CmF",
+            "mangledName": "$s8MetinSDK0A12PinViolationO20sequentialCharactersyA2CmF",
+            "moduleName": "MetinSDK",
+            "declAttributes": [
+              "RawDocComment"
+            ]
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(rawValue:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "MetinSDK.MetinPinViolation?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "MetinPinViolation",
+                    "printedName": "MetinSDK.MetinPinViolation",
+                    "usr": "s:8MetinSDK0A12PinViolationO"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:8MetinSDK0A12PinViolationO8rawValueACSgSS_tcfc",
+            "mangledName": "$s8MetinSDK0A12PinViolationO8rawValueACSgSS_tcfc",
+            "moduleName": "MetinSDK",
+            "implicit": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Var",
+            "name": "rawValue",
+            "printedName": "rawValue",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:8MetinSDK0A12PinViolationO8rawValueSSvp",
+            "mangledName": "$s8MetinSDK0A12PinViolationO8rawValueSSvp",
+            "moduleName": "MetinSDK",
+            "implicit": true,
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:8MetinSDK0A12PinViolationO8rawValueSSvg",
+                "mangledName": "$s8MetinSDK0A12PinViolationO8rawValueSSvg",
+                "moduleName": "MetinSDK",
+                "implicit": true,
+                "accessorKind": "get"
+              }
+            ]
+          }
+        ],
+        "declKind": "Enum",
+        "usr": "s:8MetinSDK0A12PinViolationO",
+        "mangledName": "$s8MetinSDK0A12PinViolationO",
+        "moduleName": "MetinSDK",
+        "declAttributes": [
+          "AccessControl",
+          "RawDocComment"
+        ],
+        "enumRawTypeName": "String",
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Copyable",
+            "printedName": "Copyable",
+            "usr": "s:s8CopyableP",
+            "mangledName": "$ss8CopyableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Escapable",
+            "printedName": "Escapable",
+            "usr": "s:s9EscapableP",
+            "mangledName": "$ss9EscapableP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "RawRepresentable",
+            "printedName": "RawRepresentable",
+            "children": [
+              {
+                "kind": "TypeWitness",
+                "name": "RawValue",
+                "printedName": "RawValue",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  }
+                ]
+              }
+            ],
+            "usr": "s:SY",
+            "mangledName": "$sSY"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "MetinSDK",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "MetinSDK",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
         "kind": "Import",
         "name": "Foundation",
         "printedName": "Foundation",
@@ -57874,6 +58154,47 @@
           },
           {
             "kind": "Var",
+            "name": "requiresNewCertificate",
+            "printedName": "requiresNewCertificate",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              }
+            ],
+            "declKind": "Var",
+            "usr": "s:8MetinSDK0A9ExceptionO22requiresNewCertificateSbvp",
+            "mangledName": "$s8MetinSDK0A9ExceptionO22requiresNewCertificateSbvp",
+            "moduleName": "MetinSDK",
+            "declAttributes": [
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "accessors": [
+              {
+                "kind": "Accessor",
+                "name": "Get",
+                "printedName": "Get()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Bool",
+                    "printedName": "Swift.Bool",
+                    "usr": "s:Sb"
+                  }
+                ],
+                "declKind": "Accessor",
+                "usr": "s:8MetinSDK0A9ExceptionO22requiresNewCertificateSbvg",
+                "mangledName": "$s8MetinSDK0A9ExceptionO22requiresNewCertificateSbvg",
+                "moduleName": "MetinSDK",
+                "accessorKind": "get"
+              }
+            ]
+          },
+          {
+            "kind": "Var",
             "name": "description",
             "printedName": "description",
             "children": [
@@ -101549,7 +101870,7 @@
           {
             "kind": "Function",
             "name": "initialize",
-            "printedName": "initialize(baseUrl:maxTryLimitPin:bearerToken:)",
+            "printedName": "initialize(baseUrl:maxTryLimitPin:bearerToken:pinLength:pinComplexity:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -101591,11 +101912,70 @@
                 ],
                 "hasDefaultArg": true,
                 "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Swift.Int?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Int",
+                    "printedName": "Swift.Int",
+                    "usr": "s:Si"
+                  }
+                ],
+                "hasDefaultArg": true,
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "hasDefaultArg": true,
+                "usr": "s:Sb"
               }
             ],
             "declKind": "Func",
-            "usr": "s:8MetinSDK0A7ManagerC10initialize7baseUrl14maxTryLimitPin11bearerTokenySS_SiSgSSSgtF",
-            "mangledName": "$s8MetinSDK0A7ManagerC10initialize7baseUrl14maxTryLimitPin11bearerTokenySS_SiSgSSSgtF",
+            "usr": "s:8MetinSDK0A7ManagerC10initialize7baseUrl14maxTryLimitPin11bearerToken9pinLength0M10ComplexityySS_SiSgSSSgAJSbtF",
+            "mangledName": "$s8MetinSDK0A7ManagerC10initialize7baseUrl14maxTryLimitPin11bearerToken9pinLength0M10ComplexityySS_SiSgSSSgAJSbtF",
+            "moduleName": "MetinSDK",
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "RawDocComment"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "validatePin",
+            "printedName": "validatePin(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "MetinSDK.MetinPinViolation?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "MetinPinViolation",
+                    "printedName": "MetinSDK.MetinPinViolation",
+                    "usr": "s:8MetinSDK0A12PinViolationO"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:8MetinSDK0A7ManagerC11validatePinyAA0aE9ViolationOSgSSF",
+            "mangledName": "$s8MetinSDK0A7ManagerC11validatePinyAA0aE9ViolationOSgSSF",
             "moduleName": "MetinSDK",
             "declAttributes": [
               "Final",
@@ -122540,51 +122920,513 @@
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 16287,
+      "offset": 15962,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 19109,
+      "offset": 18462,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 22012,
+      "offset": 21336,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 24718,
+      "offset": 24091,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 27024,
+      "offset": 26695,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 29598,
+      "offset": 29326,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/APIManager.swift",
       "kind": "Dictionary",
-      "offset": 30941,
+      "offset": 30669,
       "length": 3,
       "value": "[]"
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2153,
+      "length": 16,
+      "value": "\"cert_not_found\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2198,
+      "length": 24,
+      "value": "\"Certificate not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2245,
+      "length": 23,
+      "value": "\"certificate_not_found\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2297,
+      "length": 24,
+      "value": "\"Certificate not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2344,
+      "length": 16,
+      "value": "\"cert_not_exist\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2389,
+      "length": 24,
+      "value": "\"Certificate not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2436,
+      "length": 23,
+      "value": "\"certificate_not_exist\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2488,
+      "length": 24,
+      "value": "\"Certificate not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2535,
+      "length": 14,
+      "value": "\"cert_missing\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2578,
+      "length": 24,
+      "value": "\"Certificate not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2625,
+      "length": 21,
+      "value": "\"certificate_missing\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2675,
+      "length": 24,
+      "value": "\"Certificate not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2722,
+      "length": 14,
+      "value": "\"cert_revoked\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2765,
+      "length": 22,
+      "value": "\"Certificate revoked!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2810,
+      "length": 21,
+      "value": "\"certificate_revoked\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 2860,
+      "length": 22,
+      "value": "\"Certificate revoked!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3075,
+      "length": 14,
+      "value": "\"cert_expired\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3118,
+      "length": 22,
+      "value": "\"Certificate expired!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3153,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3167,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3192,
+      "length": 21,
+      "value": "\"certificate_expired\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3242,
+      "length": 22,
+      "value": "\"Certificate expired!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3277,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3291,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3543,
+      "length": 16,
+      "value": "\"cert_not_ready\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3581,
+      "length": 31,
+      "value": "\"Certificate is not ready yet!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3635,
+      "length": 17,
+      "value": "\"request_created\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3674,
+      "length": 52,
+      "value": "\"Certificate request created, waiting for approval!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3794,
+      "length": 16,
+      "value": "\"user_not_found\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3838,
+      "length": 17,
+      "value": "\"User not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3878,
+      "length": 21,
+      "value": "\"user_already_exists\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3924,
+      "length": 22,
+      "value": "\"User already exists!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 3969,
+      "length": 13,
+      "value": "\"user_exists\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4007,
+      "length": 22,
+      "value": "\"User already exists!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4052,
+      "length": 18,
+      "value": "\"user_not_created\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4092,
+      "length": 23,
+      "value": "\"User was not created!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4182,
+      "length": 19,
+      "value": "\"validation_failed\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4229,
+      "length": 20,
+      "value": "\"User not validate!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4272,
+      "length": 23,
+      "value": "\"inn_or_pinfl_required\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4321,
+      "length": 24,
+      "value": "\"pinfl or inn required!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4368,
+      "length": 27,
+      "value": "\"business_user_id_required\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4421,
+      "length": 21,
+      "value": "\"dboUserId required!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4465,
+      "length": 11,
+      "value": "\"wrong_otp\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4503,
+      "length": 21,
+      "value": "\"Wrong phone number!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4547,
+      "length": 11,
+      "value": "\"forbidden\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4583,
+      "length": 23,
+      "value": "\"Invalid token: \""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4605,
+      "length": 5,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4667,
+      "length": 22,
+      "value": "\"device_limit_reached\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4711,
+      "length": 22,
+      "value": "\"device_limit_reached\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4756,
+      "length": 18,
+      "value": "\"device_not_found\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4796,
+      "length": 19,
+      "value": "\"Device not found!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4901,
+      "length": 17,
+      "value": "\"license_invalid\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4940,
+      "length": 23,
+      "value": "\"License is not valid!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 4986,
+      "length": 17,
+      "value": "\"ca_server_error\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5025,
+      "length": 18,
+      "value": "\"CA server error!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5066,
+      "length": 11,
+      "value": "\"csr_error\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5099,
+      "length": 12,
+      "value": "\"CSR error!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5134,
+      "length": 25,
+      "value": "\"endpoint_not_configured\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5181,
+      "length": 33,
+      "value": "\"KMS endpoint is not configured!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5237,
+      "length": 18,
+      "value": "\"sms_server_error\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5277,
+      "length": 19,
+      "value": "\"SMS server error!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5319,
+      "length": 14,
+      "value": "\"server_error\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5355,
+      "length": 15,
+      "value": "\"Server error!\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5562,
+      "length": 7,
+      "value": "\"http_\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5593,
+      "length": 22,
+      "value": "\"Server error: \""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/ServerErrors.swift",
+      "kind": "StringLiteral",
+      "offset": 5614,
+      "length": 5,
+      "value": "\"\""
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/Constants.swift",
@@ -132549,169 +133391,183 @@
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
+      "kind": "BooleanLiteral",
+      "offset": 2181,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
+      "kind": "BooleanLiteral",
+      "offset": 4054,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "StringLiteral",
-      "offset": 4279,
+      "offset": 6339,
       "length": 7,
-      "value": "\"2.1.5\""
+      "value": "\"2.4.0\""
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 4900,
+      "offset": 6960,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 5963,
+      "offset": 8023,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 7758,
+      "offset": 9818,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 8708,
+      "offset": 10768,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 11760,
+      "offset": 13820,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 12465,
+      "offset": 14525,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 12892,
+      "offset": 14952,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 13466,
-      "length": 3,
-      "value": "[]"
-    },
-    {
-      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
-      "kind": "StringLiteral",
-      "offset": 16629,
-      "length": 2,
-      "value": "\"\""
-    },
-    {
-      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
-      "kind": "Dictionary",
-      "offset": 16703,
+      "offset": 15526,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "StringLiteral",
-      "offset": 24077,
+      "offset": 18689,
       "length": 2,
       "value": "\"\""
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 28590,
+      "offset": 18763,
+      "length": 3,
+      "value": "[]"
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
+      "kind": "StringLiteral",
+      "offset": 26461,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
+      "kind": "Dictionary",
+      "offset": 30974,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 31506,
+      "offset": 33890,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 34609,
+      "offset": 36993,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 38359,
+      "offset": 40743,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 42373,
+      "offset": 44757,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 45450,
+      "offset": 47834,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 49442,
+      "offset": 51826,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 51246,
+      "offset": 54002,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 52331,
+      "offset": 55087,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 54048,
+      "offset": 56804,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 55422,
+      "offset": 58178,
       "length": 3,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/jamshid\/StudioProjects\/Metin\/ios\/MetinSDK\/MetinSDK.swift",
       "kind": "Dictionary",
-      "offset": 57229,
+      "offset": 59985,
       "length": 3,
       "value": "[]"
     },
