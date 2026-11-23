@@ -23,7 +23,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "https://github.com/peachdev-uz/eimzo-ios-sdk", .upToNextMajor(from: "1.0.0")),
+        .package(url: "https://github.com/peachdev-uz/eimzo-ios-sdk", .upToNextMajor(from: "2.6.1")),
     ],
 
     targets: [
