@@ -37,6 +37,7 @@ import Security
 /// RSA-SHA256:  1.2.840.113549.1.1.11 (sha256WithRSAEncryption)
 /// RSA-SHA384:  1.2.840.113549.1.1.12 (sha384WithRSAEncryption)
 /// RSA-SHA512:  1.2.840.113549.1.1.13 (sha512WithRSAEncryption)
+/// O'zMSt 286:  — (MetinSDK ichida, ochiq e'lon qilinmagan)
 /// ```
 public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
 
@@ -104,6 +105,15 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
     /// - **RFC 8017**: PKCS #1 v2.2
     case rsaSHA512 = "RSA-SHA512"
 
+    // MARK: - O'zMSt
+
+    /// O'z MSt 286:2024 (A) imzo, O'z MSt 285:2024 (A) hash
+    ///
+    /// Milliy standart — MetinSDK (v3.6.x) server/SDK tomonida imzolaydi.
+    /// Apple Security framework qo'llab-quvvatlamaydi, shu sabab
+    /// `secKeyAlgorithm`, `hashAlgorithm`, `oid` va `keySize` — `nil`.
+    case ozMSt286 = "OZMST-286"
+
     // MARK: - Display Properties
 
     /// Foydalanuvchiga ko'rsatiladigan nom
@@ -115,6 +125,7 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
         case .rsaSHA256: return "RSA 2048-bit"
         case .rsaSHA384: return "RSA 3072-bit"
         case .rsaSHA512: return "RSA 4096-bit"
+        case .ozMSt286: return "O'z MSt 286:2024"
         }
     }
 
@@ -127,13 +138,14 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
         case .rsaSHA256: return "RSA 2K"
         case .rsaSHA384: return "RSA 3K"
         case .rsaSHA512: return "RSA 4K"
+        case .ozMSt286: return "O'zMSt"
         }
     }
 
     // MARK: - Technical Properties
 
-    /// Kalit uzunligi (bitlarda)
-    public var keySize: Int {
+    /// Kalit uzunligi (bitlarda). O'zMSt uchun `nil` — SDK e'lon qilmaydi.
+    public var keySize: Int? {
         switch self {
         case .ecdsaP256: return 256
         case .ecdsaP384: return 384
@@ -141,11 +153,12 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
         case .rsaSHA256: return 2048
         case .rsaSHA384: return 3072
         case .rsaSHA512: return 4096
+        case .ozMSt286: return nil
         }
     }
 
-    /// Hash algoritmi
-    public var hashAlgorithm: HashAlgorithm {
+    /// Hash algoritmi. O'zMSt uchun `nil` — O'z MSt 285 hash SDK ichida hisoblanadi.
+    public var hashAlgorithm: HashAlgorithm? {
         switch self {
         case .ecdsaP256, .rsaSHA256:
             return .sha256
@@ -153,11 +166,13 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
             return .sha384
         case .ecdsaP521, .rsaSHA512:
             return .sha512
+        case .ozMSt286:
+            return nil
         }
     }
 
-    /// Xavfsizlik darajasi
-    public var securityLevel: SecurityLevel {
+    /// Xavfsizlik darajasi. O'zMSt uchun `nil` — NIST SP 800-57 tasnifiga kirmaydi.
+    public var securityLevel: SecurityLevel? {
         switch self {
         case .ecdsaP256, .rsaSHA256:
             return .standard  // 128-bit
@@ -165,21 +180,23 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
             return .high  // 192-bit
         case .ecdsaP521, .rsaSHA512:
             return .maximum  // 256-bit
+        case .ozMSt286:
+            return nil
         }
     }
 
-    /// Elliptic curve mi yoki RSA?
+    /// NIST elliptic curve (ECDSA) mi?
     public var isEllipticCurve: Bool {
         switch self {
         case .ecdsaP256, .ecdsaP384, .ecdsaP521:
             return true
-        case .rsaSHA256, .rsaSHA384, .rsaSHA512:
+        case .rsaSHA256, .rsaSHA384, .rsaSHA512, .ozMSt286:
             return false
         }
     }
 
-    /// OID (Object Identifier) - RFC 5758, RFC 8017
-    public var oid: String {
+    /// OID (Object Identifier) - RFC 5758, RFC 8017. O'zMSt uchun `nil`.
+    public var oid: String? {
         switch self {
         case .ecdsaP256: return "1.2.840.10045.4.3.2"
         case .ecdsaP384: return "1.2.840.10045.4.3.3"
@@ -187,6 +204,7 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
         case .rsaSHA256: return "1.2.840.113549.1.1.11"
         case .rsaSHA384: return "1.2.840.113549.1.1.12"
         case .rsaSHA512: return "1.2.840.113549.1.1.13"
+        case .ozMSt286: return nil
         }
     }
 
@@ -197,7 +215,9 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
     /// SecKeyCreateSignature() va SecKeyVerifySignature() uchun ishlatiladi.
     /// Apple Developer Documentation:
     /// https://developer.apple.com/documentation/security/seckeyalgorithm
-    public var secKeyAlgorithm: SecKeyAlgorithm {
+    ///
+    /// O'zMSt uchun `nil` — Apple Security bu algoritmni qo'llab-quvvatlamaydi.
+    public var secKeyAlgorithm: SecKeyAlgorithm? {
         switch self {
         case .ecdsaP256:
             return .ecdsaSignatureMessageX962SHA256
@@ -211,11 +231,13 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
             return .rsaSignatureMessagePKCS1v15SHA384
         case .rsaSHA512:
             return .rsaSignatureMessagePKCS1v15SHA512
+        case .ozMSt286:
+            return nil
         }
     }
 
-    /// Digest uchun SecKeyAlgorithm (pre-hashed data uchun)
-    public var secKeyAlgorithmDigest: SecKeyAlgorithm {
+    /// Digest uchun SecKeyAlgorithm (pre-hashed data uchun). O'zMSt uchun `nil`.
+    public var secKeyAlgorithmDigest: SecKeyAlgorithm? {
         switch self {
         case .ecdsaP256:
             return .ecdsaSignatureDigestX962SHA256
@@ -229,6 +251,8 @@ public enum SignatureAlgorithm: String, Codable, Sendable, CaseIterable {
             return .rsaSignatureDigestPKCS1v15SHA384
         case .rsaSHA512:
             return .rsaSignatureDigestPKCS1v15SHA512
+        case .ozMSt286:
+            return nil
         }
     }
 }

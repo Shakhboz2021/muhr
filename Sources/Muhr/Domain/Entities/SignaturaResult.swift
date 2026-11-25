@@ -202,7 +202,7 @@ extension SignatureResult {
             "timestamp": timestampISO8601,
             "timestamp_unix": timestampUnix,
             "algorithm": algorithm.rawValue,
-            "algorithm_oid": algorithm.oid,
+            "algorithm_oid": algorithm.oid as Any,
             "signer": [
                 "common_name": certificate.commonName,
                 "serial_number": certificate.serialNumber,

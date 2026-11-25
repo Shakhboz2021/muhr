@@ -112,6 +112,8 @@ App                  Metin Server
  | initialize(baseUrl)    |
  |----------------------->|
  |                        |
+ | addUser / getUser      |  <- Foydalanuvchi (O'zMSt)
+ |----------------------->|
  | addCertificate(...)    |  <- Bir marta (ro'yxatdan o'tish)
  |----------------------->|
  |<--- serialNumber ------|
@@ -129,7 +131,8 @@ App                  Metin Server
 ### Talablar
 
 - **Internet**: Ha (har bir imzolashda)
-- **Server**: Metin serveri URL'i (`base_url`)
+- **Server**: Metin serveri URL'i (`base_url`), istalgan KMS manzili (ichki IP ham) ishlaydi
+- **SDK**: MetinSDK 3.6.4 (O'z MSt 286:2024 imzo, O'z MSt 285:2024 hash)
 - **Sozlash**: `initialize()` chaqirilishi shart
 
 ### Foydalanish
@@ -137,20 +140,34 @@ App                  Metin Server
 **1. Sozlash:**
 
 ```swift
-let metin = MetinProvider(
-    configuration: ProviderConfiguration(
-        type: .metin,
-        additionalParameters: ["base_url": "https://api.metin.uz"]
-    )
+try await Muhr.metin.initialize(
+    baseUrl: "https://kms.example.uz",
+    maxTryLimitPin: 5,        // ixtiyoriy: ketma-ket xato PIN limiti
+    bearerToken: accessToken, // ixtiyoriy: mobile_log uchun (SDK ichida token yo'q)
+    pinLength: 6,             // ixtiyoriy: PIN uzunligi talabi
+    pinComplexity: true       // ixtiyoriy: takroriy/ketma-ket belgilarni taqiqlash
 )
-try await metin.initialize()
+
+// Token yangilanganda:
+Muhr.metin.updateBearerToken(newToken)
 ```
 
-**2. Sertifikat qo'shish (bir marta):**
+Yoki `ProviderConfiguration` orqali: `base_url`, `max_try_limit_pin`,
+`bearer_token`, `pin_length`, `pin_complexity` (`"true"` / `"false"`).
+
+**2. Foydalanuvchi (O'zMSt):**
 
 ```swift
-let result = try await metin.addCertificate(
-    userId: "server_user_id",
+// Foydalanuvchini olish
+let user = try await Muhr.metin.getUser(
+    pinfl: "12345678901234",
+    inn: "123456789",
+    dboUserId: "1001",
+    passport: "AA1234567"
+)
+
+// Ro'yxatdan o'tkazish
+let added = try await Muhr.metin.addUser(
     emailAddress: "user@example.com",
     commonName: "Ism Familiya",
     organizationUnitName: "Bo'lim",
@@ -160,46 +177,144 @@ let result = try await metin.addCertificate(
     stateOrProvinceName: "Toshkent",
     countryName: .UZ,
     pinfl: "12345678901234",
-    pinCode: "123456"
+    inn: "123456789",
+    phoneNumber: "998901234567",
+    dboUserId: "1001",
+    position: "Direktor",
+    passport: "AA1234567"
+)
+```
+
+**3. Sertifikat qo'shish (bir marta):**
+
+```swift
+let result = try await Muhr.metin.addCertificate(
+    userId: added.userId,
+    emailAddress: "user@example.com",
+    commonName: "Ism Familiya",
+    organizationUnitName: "Bo'lim",
+    organizationName: "Tashkilot",
+    streetAddress: "Manzil",
+    localityName: "Toshkent",
+    stateOrProvinceName: "Toshkent",
+    countryName: .UZ,
+    pinfl: "12345678901234",
+    inn: "123456789",
+    pinCode: "123456",
+    dboUserId: "1001",
+    passport: "AA1234567",
+    position: "Direktor"
 )
 // result.serialNumber ni saqlang — keyinchalik sign uchun kerak
 ```
 
-**3. Imzolash:**
+O'zMSt'da `pinfl`, `inn`, `dboUserId`, `passport`, `position` majburiy.
+SDK maydonlarni so'rovdan **oldin** tekshiradi va `.invalidArgument` qaytaradi:
+
+| Maydon | Qoida |
+|---|---|
+| `pinfl` | 14 raqam |
+| `inn` | 9 yoki 14 raqam |
+| `dboUserId` | musbat butun son |
+| `passport` | `AA1234567` yoki `PASUZ-AA1234567` |
+| `phoneNumber` | `998XXXXXXXXX` |
+| `commonName`, `organizationName`, `organizationUnitName`, `position`, `localityName`, `stateOrProvinceName` | 64 belgigacha |
+| `streetAddress`, `emailAddress` | 128 belgigacha |
+
+**4. Sertifikatni olish va o'chirish:**
+
+```swift
+// serialNumber bo'yicha
+let cert = try await Muhr.metin.getCertificate(serialNumber: savedSerialNumber)
+
+// yoki 4 maydon bo'yicha (pinfl + inn + dboUserId + passport)
+let same = try await Muhr.metin.getCertificate(
+    pinfl: "12345678901234", inn: "123456789",
+    dboUserId: "1001", passport: "AA1234567"
+)
+
+// O'chirish serverda revoke qiladi, xato bo'lsa throw qiladi
+try await Muhr.metin.deleteCertificate(serialNumber: savedSerialNumber)
+try await Muhr.metin.deleteCertificate(dboUserId: "1001")
+try await Muhr.metin.deleteCertificate(pinfl: "12345678901234", inn: nil)
+try await Muhr.metin.clearCertificates()
+```
+
+**5. Imzolash:**
 
 ```swift
 // serialNumber bilan
-let signature = try await metin.sign(
+let signature = try await Muhr.metin.sign(
     pinCode: "123456",
     message: "imzolanadigan matn",
     serialNumber: savedSerialNumber
 )
 
-// pinfl/inn bilan
-let signature = try await metin.sign(
+// 4 maydon bilan (pinfl + inn + dboUserId + passport)
+let signature = try await Muhr.metin.sign(
     pinCode: "123456",
     message: "imzolanadigan matn",
     pinfl: "12345678901234",
-    inn: nil
+    inn: "123456789",
+    dboUserId: "1001",
+    passport: "AA1234567"
 )
 
 // Bir nechta xabar birdan
-let signatures = try await metin.sign(
+let signatures = try await Muhr.metin.sign(
     pinCode: "123456",
     messages: ["xabar1", "xabar2"],
     serialNumber: savedSerialNumber
 )
 ```
 
-**4. CMS imzolash:**
+**6. CMS imzolash va tekshirish:**
 
 ```swift
-let signedCMS = try await metin.signCMS(
+let signedCMS = try await Muhr.metin.signCMS(
     cms: "",  // bo'sh = yangi CMS
     pinCode: "123456",
     serialNumber: savedSerialNumber
 )
+
+// pinfl/inn bilan
+let signedCMS2 = try await Muhr.metin.signCMS(
+    cms: signedCMS, pinCode: "123456", pinfl: "12345678901234", inn: "123456789"
+)
+
+let verification = try await Muhr.metin.verifyCMS(signedCMS)
 ```
+
+**7. PIN:**
+
+```swift
+// initialize(... pinLength:, pinComplexity:) dan keyin, so'rovdan oldin
+if let violation = Muhr.metin.validatePin("111111") {
+    // .length, .repeatedCharacters, .sequentialCharacters
+}
+
+try await Muhr.metin.changePin(
+    currentPin: "123456", newPin: "654321", serialNumber: savedSerialNumber
+)
+```
+
+PIN ketma-ket `maxTryLimitPin` marta xato kiritilsa, sertifikat revoke qilinadi va
+lokaldan o'chiriladi. Har xatoda `.pinCodeMismatch(message:triesCount:)`, limitga
+yetganda `.certificateRevoked` qaytadi.
+
+**8. Xatolar:**
+
+Barcha MetinSDK xatolari `MuhrError.metin(MuhrMetinError, requiresNewCertificate: Bool)`
+orqali keladi. `requiresNewCertificate == true` bo'lsa, foydalanuvchini sertifikatni
+qayta yaratish oqimiga yo'naltiring.
+
+**9. Algoritm:**
+
+Metin sertifikatlari `SignatureAlgorithm.ozMSt286` (O'z MSt 286:2024) ni ko'rsatadi.
+Apple Security bu algoritmni qo'llab-quvvatlamaydi, shu sabab `oid`, `secKeyAlgorithm`,
+`secKeyAlgorithmDigest`, `hashAlgorithm`, `keySize`, `securityLevel` — `nil`. Bunday
+sertifikat bilan Styx yoki Keychain orqali imzolashga urinish `unsupportedAlgorithm`
+xatosini beradi.
 
 ---
 

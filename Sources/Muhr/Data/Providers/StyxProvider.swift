@@ -461,9 +461,9 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         algorithm: SignatureAlgorithm
     ) throws -> Data {
 
-        let secAlgorithm = algorithm.secKeyAlgorithm
-
-        guard SecKeyIsAlgorithmSupported(privateKey, .sign, secAlgorithm) else {
+        guard let secAlgorithm = algorithm.secKeyAlgorithm,
+            SecKeyIsAlgorithmSupported(privateKey, .sign, secAlgorithm)
+        else {
             throw MuhrError.unsupportedAlgorithm(algorithm: algorithm.rawValue)
         }
 
@@ -491,9 +491,8 @@ public final class StyxProvider: ProviderProtocol, @unchecked Sendable {
         algorithm: SignatureAlgorithm
     ) -> Bool {
 
-        let secAlgorithm = algorithm.secKeyAlgorithm
-
-        guard SecKeyIsAlgorithmSupported(publicKey, .verify, secAlgorithm)
+        guard let secAlgorithm = algorithm.secKeyAlgorithm,
+            SecKeyIsAlgorithmSupported(publicKey, .verify, secAlgorithm)
         else {
             return false
         }

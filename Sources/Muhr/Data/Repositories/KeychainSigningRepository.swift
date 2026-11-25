@@ -192,10 +192,12 @@ public final class KeychainSigningRepository: SigningRepository,
     ) throws -> SignatureResult {
 
         let algorithm = certificate.algorithm
-        let secAlgorithm = algorithm.secKeyAlgorithm
 
         // Algoritmni qo'llab-quvvatlashini tekshirish
-        guard SecKeyIsAlgorithmSupported(privateKey, .sign, secAlgorithm) else {
+        guard let secAlgorithm = algorithm.secKeyAlgorithm,
+            let hashAlgorithm = algorithm.hashAlgorithm,
+            SecKeyIsAlgorithmSupported(privateKey, .sign, secAlgorithm)
+        else {
             throw MuhrError.unsupportedAlgorithm(algorithm: algorithm.rawValue)
         }
 
@@ -216,7 +218,7 @@ public final class KeychainSigningRepository: SigningRepository,
         }
 
         // Hash hisoblash
-        let dataHash = hash(data: data, using: algorithm.hashAlgorithm)
+        let dataHash = hash(data: data, using: hashAlgorithm)
 
         // Natija
         return SignatureResult(
@@ -237,10 +239,10 @@ public final class KeychainSigningRepository: SigningRepository,
     ) -> VerificationResult {
 
         let algorithm = certificate.algorithm
-        let secAlgorithm = algorithm.secKeyAlgorithm
 
         // Algoritmni qo'llab-quvvatlashini tekshirish
-        guard SecKeyIsAlgorithmSupported(publicKey, .verify, secAlgorithm)
+        guard let secAlgorithm = algorithm.secKeyAlgorithm,
+            SecKeyIsAlgorithmSupported(publicKey, .verify, secAlgorithm)
         else {
             return VerificationResult.failure(
                 errors: [.unsupportedAlgorithm(algorithm.rawValue)]

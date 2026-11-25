@@ -41,10 +41,16 @@ extension MetinProvider {
     ///   - baseUrl: MetinSDK server manzili (masalan: "https://api.metin.uz")
     ///   - maxTryLimitPin: PIN kod uchun ruxsat etilgan urinishlar soni (ixtiyoriy).
     ///     `nil` bo'lsa MetinSDK standart qiymatidan foydalanadi.
+    ///   - bearerToken: `mobile_log` so'rovlari uchun Bearer token (ixtiyoriy)
+    ///   - pinLength: Talab qilinadigan PIN uzunligi (ixtiyoriy)
+    ///   - pinComplexity: PIN murakkabligi tekshiruvi (takroriy / ketma-ket belgilar)
     ///   - delegate: Hodisalarni kuzatish uchun delegate (ixtiyoriy)
     public func initialize(
         baseUrl: String,
         maxTryLimitPin: Int? = nil,
+        bearerToken: String? = nil,
+        pinLength: Int? = nil,
+        pinComplexity: Bool = false,
         delegate: ProviderDelegate? = nil
     ) async throws {
         setDelegate(delegate)
@@ -53,6 +59,13 @@ extension MetinProvider {
         if let maxTryLimitPin {
             config.additionalParameters["max_try_limit_pin"] = String(maxTryLimitPin)
         }
+        if let bearerToken {
+            config.additionalParameters["bearer_token"] = bearerToken
+        }
+        if let pinLength {
+            config.additionalParameters["pin_length"] = String(pinLength)
+        }
+        config.additionalParameters["pin_complexity"] = String(pinComplexity)
         try await updateConfiguration(config)
         try await initialize()
     }
@@ -167,8 +180,8 @@ extension CertificateInfo {
             issuerName: "Metin",
             validFrom: Date(),
             validTo: Date.distantFuture,
-            algorithm: .rsaSHA256,
-            keySize: 2048,
+            algorithm: .ozMSt286,
+            keySize: 0,
             secCertificate: nil,
             privateKeyRef: nil
         )
