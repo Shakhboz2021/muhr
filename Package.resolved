@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/peachdev-uz/eimzo-ios-sdk",
       "state" : {
-        "revision" : "31d50b6598b7e279b2567d8141767fc53be717c3",
-        "version" : "2.6.1"
+        "revision" : "918f01cecf57266d8e0d092dd83a9a76b4711ccb",
+        "version" : "2.7.0"
       }
     }
   ],
